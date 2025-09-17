@@ -1,57 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Italien — Loisirs : Super Jeux de Mémo</title>
-<style>
-  :root{
-    --bg:#f8fafc; --ink:#1f2937; --muted:#6b7280; --card:#ffffff; --brand:#2563eb;
-    --ok:#22c55e; --bad:#ef4444; --accent:#8b5cf6;
-  }
-  *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
-  header{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:10}
-  .wrap{max-width:1100px;margin:0 auto;padding:16px}
-  h1{margin:0;font-size:1.4rem}
-  .hud{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
-  .badge{background:#eef2ff;color:#3730a3;padding:6px 10px;border-radius:999px;font-weight:600}
-  .stars{letter-spacing:2px}
-  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-  .btn{border:0;border-radius:10px;padding:10px 14px;background:#e5e7eb;cursor:pointer;font-weight:600}
-  .btn.primary{background:var(--brand);color:#fff}
-  .btn.ok{background:var(--ok);color:#fff}
-  .btn.bad{background:var(--bad);color:#fff}
-  .btn.ghost{background:transparent;border:1px solid #e5e7eb}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-  .card{background:var(--card);border:1px solid #e5e7eb;border-radius:14px;padding:16px}
-  .center{text-align:center}
-  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f5f9;color:#0f172a}
-  .list{list-style:none;padding:0;margin:0}
-  .list li{padding:6px 8px;border-bottom:1px dashed #e5e7eb}
-  .list li:last-child{border-bottom:0}
-  .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:10px;margin:6px 0;min-height:44px;display:flex;align-items:center;justify-content:center}
-  .drag{background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:10px;margin:6px;cursor:grab;display:inline-block}
-  .memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:560px;margin:16px auto}
-  .memory-card{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:20px;cursor:pointer;text-align:center;user-select:none}
-  .bingo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:600px;margin:0 auto}
-  .bingo-cell{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:14px;cursor:pointer;text-align:center}
-  .bingo-cell.mark{background:#d1fae5;border-color:#10b981}
-  .bingo-cell.call{outline:2px solid #60a5fa}
-  .progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
-  .bar{height:100%;width:0;background:var(--brand);transition:width .2s}
-  .wheel{width:280px;height:280px;border-radius:50%;border:10px solid #e5e7eb;margin:10px auto;position:relative;overflow:hidden}
-  .wheel-slice{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-origin:50% 50%;font-size:.9rem;color:#fff}
-  .wheel-pointer{width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:18px solid var(--bad);margin:0 auto 6px}
-  .muted{color:var(--muted)}
-  input[type=text]{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:min(520px,100%)}
-  select{padding:10px;border:1px solid #cbd5e1;border-radius:10px}
-  .ghost-karaoke{font-size:1.4rem;letter-spacing:.02em}
-  .hl{background:#fef3c7}
-  .small{font-size:.92rem}
-  .right{float:right}
-  @media (max-width:640px){.memory-grid{grid-template-columns:repeat(2,1fr)}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Italien — Loisirs : Super Jeux de Mémo</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
@@ -63,9 +16,7 @@
       <span id="best" class="badge">Best : 0</span>
       <button class="btn ghost right" onclick="resetProgress()">Réinitialiser les progrès</button>
     </div>
-    <div class="toolbar" id="toolbar">
-      <!-- Boutons de jeux injectés depuis JS -->
-    </div>
+    <div class="toolbar" id="toolbar"></div>
   </div>
 </header>
 
@@ -104,7 +55,6 @@ const setHTML = (el, html) => el.innerHTML = html;
 const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
 const pick = (arr,n=1)=>shuffle([...arr]).slice(0,n);
 const norm = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
-const byIT = it => DATA.find(x=>x.it===it);
 
 /* =======================
    Progression (LocalStorage)
@@ -142,27 +92,27 @@ function resetProgress(){
    Barre d’outils (jeux)
 ======================= */
 const GAMES = [
-  {id:"lesson", label:"📖 Leçon", run:showLesson, cls:""},
-  {id:"quiz", label:"📝 Quiz", run:startQuiz, cls:""},
-  {id:"flash", label:"🎴 Flashcards", run:startFlashcards, cls:""},
-  {id:"audio", label:"🔊 Audio", run:startAudio, cls:""},
-  {id:"vf", label:"🎲 Vrai/Faux", run:startVF, cls:""},
-  {id:"drag", label:"🧩 Associer", run:startDragDrop, cls:""},
-  {id:"auto", label:"⏱️ Révision minute", run:startAuto, cls:""},
-  {id:"chrono", label:"🏆 Challenge chrono", run:startChrono, cls:""},
-  {id:"memory", label:"🎮 Memory", run:startMemory, cls:""},
-  {id:"dictee", label:"⌨️ Dictée inversée", run:startDictee, cls:""},
-  {id:"bingo", label:"🔢 Bingo 4×4", run:startBingo, cls:""},
-  {id:"intrus", label:"🧠 Intrus", run:startIntrus, cls:""},
-  {id:"peek", label:"👀 Peek & Hide", run:startPeek, cls:""},
-  {id:"phrases", label:"🧱 Phrase Builder", run:startPhrases, cls:""},
-  {id:"target", label:"🎯 Cible rapide", run:startTarget, cls:""},
-  {id:"anag", label:"🔤 Anagrammes", run:startAnagrammes, cls:""},
-  {id:"shadow", label:"🎤 Shadowing", run:startShadow, cls:""},
-  {id:"pieges", label:"⚠️ Pièges", run:startPieges, cls:""},
-  {id:"wheel", label:"🎡 Roue", run:startWheel, cls:""},
-  {id:"daily", label:"🗓️ Révision du jour", run:startDaily, cls:""},
-  {id:"duel", label:"👥 Duel local", run:startDuel, cls:""}
+  {id:"lesson", label:"📖 Leçon", run:showLesson},
+  {id:"quiz", label:"📝 Quiz", run:startQuiz},
+  {id:"flash", label:"🎴 Flashcards", run:startFlashcards},
+  {id:"audio", label:"🔊 Audio", run:startAudio},
+  {id:"vf", label:"🎲 Vrai/Faux", run:startVF},
+  {id:"drag", label:"🧩 Associer", run:startDragDrop},
+  {id:"auto", label:"⏱️ Révision minute", run:startAuto},
+  {id:"chrono", label:"🏆 Challenge chrono", run:startChrono},
+  {id:"memory", label:"🎮 Memory", run:startMemory},
+  {id:"dictee", label:"⌨️ Dictée inversée", run:startDictee},
+  {id:"bingo", label:"🔢 Bingo 4×4", run:startBingo},
+  {id:"intrus", label:"🧠 Intrus", run:startIntrus},
+  {id:"peek", label:"👀 Peek & Hide", run:startPeek},
+  {id:"phrases", label:"🧱 Phrase Builder", run:startPhrases},
+  {id:"target", label:"🎯 Cible rapide", run:startTarget},
+  {id:"anag", label:"🔤 Anagrammes", run:startAnagrammes},
+  {id:"shadow", label:"🎤 Shadowing", run:startShadow},
+  {id:"pieges", label:"⚠️ Pièges", run:startPieges},
+  {id:"wheel", label:"🎡 Roue", run:startWheel},
+  {id:"daily", label:"🗓️ Révision du jour", run:startDaily},
+  {id:"duel", label:"👥 Duel local", run:startDuel}
 ];
 function renderToolbar(){
   setHTML($("#toolbar"),
@@ -171,7 +121,7 @@ function renderToolbar(){
 }
 
 /* =======================
-   Jeux — versions compactes
+   Jeux — logiques
 ======================= */
 
 /* 1) Leçon */
@@ -187,7 +137,7 @@ function startQuiz(){
   setHTML($("#content"), `
     <h2>📝 Quiz</h2>
     <p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
-    ${opts.map(o=>`<button class="btn" onclick="quizCheck('${q.it}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}
+    ${opts.map(o=>`<button class="btn" onclick="quizCheck('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}
   `);
 }
 function quizCheck(it,ans,correct){
@@ -224,8 +174,8 @@ function startVF(){
   const isTrue = (q.fr===r.fr);
   setHTML($("#content"), `<h2>🎲 Vrai ou Faux</h2>
     <p>${q.it} ${q.emoji} = ${r.fr}</p>
-    <button class="btn ok" onclick="vfCheck('${q.it}',${isTrue},true)">Vrai</button>
-    <button class="btn bad" onclick="vfCheck('${q.it}',${isTrue},false)">Faux</button>`);
+    <button class="btn ok" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},true)">Vrai</button>
+    <button class="btn bad" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},false)">Faux</button>`);
 }
 function vfCheck(it,truth,ans){
   const ok = (truth===ans);
@@ -249,7 +199,7 @@ function drop(e, fr){
   e.preventDefault();
   const data = JSON.parse(e.dataTransfer.getData("text/plain"));
   const ok = (data.fr===fr);
-  e.target.style.background = ok ? "#d1fae5" : "#fee2e2";
+  e.target.style.background = ok ? "var(--ok-bg)" : "var(--bad-bg)";
   recordResult(data.it, ok);
 }
 
@@ -257,7 +207,7 @@ function drop(e, fr){
 let autoTimer=null, autoIndex=0;
 function startAuto(){
   clearInterval(autoTimer); autoIndex=0;
-  setHTML($("#content"), `<h2>⏱️ Révision minute</h2><div id="autoBox" class="center" style="font-size:1.4rem;padding:10px"></div>`);
+  setHTML($("#content"), `<h2>⏱️ Révision minute</h2><div id="autoBox" class="center auto-box"></div>`);
   autoTimer = setInterval(()=>{
     const d = DATA[autoIndex];
     $("#autoBox").innerHTML = `${d.emoji} <b>${d.it}</b><br>${d.fr}`;
@@ -265,7 +215,7 @@ function startAuto(){
   }, 3000);
 }
 
-/* 8) Challenge chrono (10 QCM rapides) */
+/* 8) Challenge chrono (10 QCM) */
 let chronoScore=0, chronoCount=0;
 function startChrono(){ chronoScore=0; chronoCount=0; chronoNext(); }
 function chronoNext(){
@@ -293,7 +243,7 @@ function flip(i){
     if(memFlipped.length===2){
       setTimeout(()=>{
         const [a,b]=memFlipped;
-        if(a.text===b.pair){ $("#m"+a.i).style.background="#d1fae5"; $("#m"+b.i).style.background="#d1fae5"; memFound++;
+        if(a.text===b.pair){ $("#m"+a.i).classList.add("ok"); $("#m"+b.i).classList.add("ok"); memFound++;
           const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
           if(it) recordResult(it,true);
           if(memFound===DATA.length) alert("🎉 Bravo ! Memory terminé.");
@@ -308,13 +258,13 @@ function flip(i){
   }
 }
 
-/* 10) Dictée inversée (FR -> IT à taper) */
+/* 10) Dictée inversée (FR -> IT) */
 function startDictee(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>⌨️ Dictée inversée</h2>
     <p>Écris en italien : <b>${q.fr}</b> ${q.emoji}</p>
     <input id="dicteeIn" type="text" placeholder="Tape l’italien ici" onkeydown="if(event.key==='Enter') dicteeCheck('${q.it.replace(/'/g,"\\'")}')" />
-    <div style="margin-top:8px">
+    <div class="row">
       <button class="btn primary" onclick="dicteeCheck('${q.it.replace(/'/g,"\\'")}')">Vérifier</button>
       <button class="btn" onclick="startDictee()">Nouveau</button>
     </div>`);
@@ -327,7 +277,7 @@ function dicteeCheck(it){
   recordResult(it,ok); startDictee();
 }
 
-/* 11) Bingo 4×4 (appel de traductions) */
+/* 11) Bingo 4×4 */
 let bingoCall=null;
 function startBingo(){
   const gridItems = shuffle([...DATA]);
@@ -337,7 +287,7 @@ function startBingo(){
     <div class="bingo-grid">
       ${gridItems.map(d=>`<div class="bingo-cell" onclick="bingoClick(this,'${d.it.replace(/'/g,"\\'")}','${d.fr.replace(/'/g,"\\'")}')">${d.emoji} ${d.it}</div>`).join("")}
     </div>
-    <div style="margin-top:10px"><button class="btn" onclick="bingoNext()">🔔 Nouvel appel</button></div>
+    <div class="row"><button class="btn" onclick="bingoNext()">🔔 Nouvel appel</button></div>
   `);
 }
 function bingoClick(cell,it,fr){
@@ -356,9 +306,10 @@ function checkBingoWin(){
   for(const l of lines){ if(l.map(idx).reduce((a,b)=>a+b,0)===4){ alert("🟩 BINGO !"); break; } }
 }
 
-/* 12) Intrus (Odd-One-Out) */
+/* 12) Intrus */
 function startIntrus(){
-  const baseCat = pick(["sport","art","culture","autre"])[0];
+  const cats = ["sport","art","culture","autre"];
+  const baseCat = pick(cats)[0];
   const same = pick(DATA.filter(d=>d.cat===baseCat),3);
   const diff = pick(DATA.filter(d=>d.cat!==baseCat),1);
   const set = shuffle([...same, ...diff]);
@@ -377,9 +328,9 @@ function startPeek(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>👀 Peek & Hide</h2>
     <p>Regarde vite, puis traduis en français.</p>
-    <div id="peekWord" style="font-size:1.4rem;margin:6px 0">${q.emoji} <b>${q.it}</b></div>
+    <div id="peekWord" class="peek">${q.emoji} <b>${q.it}</b></div>
     <input id="peekIn" type="text" placeholder="Traduction FR" onkeydown="if(event.key==='Enter') peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')" />
-    <div style="margin-top:8px"><button class="btn primary" onclick="peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">Vérifier</button></div>
+    <div class="row"><button class="btn primary" onclick="peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">Vérifier</button></div>
   `);
   setTimeout(()=>$("#peekWord").innerHTML = "••••••••••••", 1200);
   $("#peekIn").focus();
@@ -390,18 +341,20 @@ function peekCheck(it,fr){
   recordResult(it,ok); startPeek();
 }
 
-/* 14) Phrase Builder (compléter) */
+/* 14) Phrase Builder */
 function startPhrases(){
   const bank = shuffle([...DATA]).slice(6);
   const slots = shuffle(pick(DATA,3));
   setHTML($("#content"), `<h2>🧱 Phrase Builder</h2>
-    <p>Complète les phrases avec la bonne activité (menu déroulant).</p>
+    <p>Complète les phrases (menu déroulant).</p>
     <div class="card">
       <p>Mi piace <select id="p1">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
       <p>La sera, <select id="p2">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
       <p>Domani voglio <select id="p3">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
-      <button class="btn primary" onclick="phrasesCheck(['${slots[0].it.replace(/'/g,"\\'")}','${slots[1].it.replace(/'/g,"\\'")}','${slots[2].it.replace(/'/g,"\\'")}'])">Vérifier (solutions cachées)</button>
-      <p class="muted small">Astuce: peu importe l’ordre, tu dois choisir 3 actions plausibles. Une vérification souple te donne le point si 2/3 sont cohérentes.</p>
+      <div class="row">
+        <button class="btn primary" onclick="phrasesCheck(['${slots[0].it.replace(/'/g,"\\'")}','${slots[1].it.replace(/'/g,"\\'")}','${slots[2].it.replace(/'/g,"\\'")}'])">Vérifier</button>
+      </div>
+      <p class="muted small">Astuce: tu obtiens le point si 2/3 sont plausibles.</p>
     </div>`);
 }
 function phrasesCheck(targets){
@@ -409,10 +362,10 @@ function phrasesCheck(targets){
   let okCount = 0; vals.forEach(v=>{ if(targets.includes(v)) okCount++; });
   const ok = okCount>=2;
   alert((ok? "✅ Bien joué ("+okCount+"/3)": "❌ Seulement "+okCount+"/3"));
-  const it = vals[0]; recordResult(it, ok); // attribut un item arbitraire
+  const it = vals[0]; recordResult(it, ok);
 }
 
-/* 15) Cible rapide (réflexe + timer) */
+/* 15) Cible rapide */
 let targetTimer=null, targetTime=3000;
 function startTarget(){
   const q = pick(DATA)[0];
@@ -428,22 +381,22 @@ function targetAnswer(it,ans,correct){
   clearInterval(targetTimer);
   const ok = (ans===correct); alert(ok?"✅":"❌ "+correct);
   recordResult(it,ok);
-  // accélère légèrement
   targetTime = Math.max(1200, targetTime-120);
   startTarget();
 }
 
-/* 16) Anagrammes (recompose le mot italien) */
+/* 16) Anagrammes */
 function startAnagrammes(){
-  const q = pick(DATA.filter(d=>!/\s/.test(d.it)))[0] || pick(DATA)[0];
+  const single = DATA.filter(d=>!/\s/.test(d.it));
+  const q = (single.length? pick(single)[0] : pick(DATA)[0]);
   const letters = shuffle(q.it.replace(/\s+/g,'').split(''));
   setHTML($("#content"), `<h2>🔤 Anagrammes</h2>
     <p>Recompose : <b>${q.it.length}</b> lettres (${q.emoji})</p>
-    <div id="anaOut" class="pill" style="min-height:38px;display:inline-block;padding:8px 12px"></div>
-    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(42px,1fr));max-width:480px">
-      ${letters.map((c,i)=>`<button class="btn" id="l${i}" onclick="anaPick('${c}','l${i}')">${c}</button>`).join("")}
+    <div id="anaOut" class="pill ana-out"></div>
+    <div class="grid letters">
+      ${letters.map((c,i)=>`<button class="btn key" id="l${i}" onclick="anaPick('${c}','l${i}')">${c}</button>`).join("")}
     </div>
-    <div style="margin-top:8px">
+    <div class="row">
       <button class="btn primary" onclick="anaCheck('${q.it.replace(/'/g,"\\'")}')">Vérifier</button>
       <button class="btn" onclick="startAnagrammes()">Recommencer</button>
     </div>`);
@@ -464,7 +417,7 @@ function startShadow(){
   setHTML($("#content"), `<h2>🎤 Shadowing</h2>
     <p class="muted small">Lis à voix haute en même temps que la voix.</p>
     <div id="kara" class="ghost-karaoke">${q.emoji} ${q.it}</div>
-    <div style="margin-top:8px"><button class="btn primary" onclick="shadowPlay('${q.it.replace(/'/g,"\\'")}')">▶️ Écouter</button></div>`);
+    <div class="row"><button class="btn primary" onclick="shadowPlay('${q.it.replace(/'/g,"\\'")}')">▶️ Écouter</button></div>`);
 }
 function shadowPlay(text){
   speak(text);
@@ -474,8 +427,8 @@ function shadowPlay(text){
 
 /* 18) Pièges (deux options proches) */
 function startPieges(){
-  const q = pick(DATA.filter(d=>d.cat==="sport"))[0] || pick(DATA)[0];
-  // option piégeuse : une autre traduction de sport
+  const sports = DATA.filter(d=>d.cat==="sport");
+  const q = (sports.length? pick(sports)[0] : pick(DATA)[0]);
   const trap = pick(DATA.filter(d=>d.cat===q.cat && d.fr!==q.fr))[0]?.fr || pick(DATA)[0].fr;
   const opts = shuffle([q.fr, trap]);
   setHTML($("#content"), `<h2>⚠️ Pièges</h2>
@@ -521,7 +474,6 @@ function spinWheel(){
 
 /* 20) Révision du jour (spaced / faibles) */
 function startDaily(){
-  // score de difficulté = ko - ok (plus c'est grand, plus faible)
   const items = [...DATA].sort((a,b)=>{
     const sa=STATS.items[a.it], sb=STATS.items[b.it];
     const aa = (sa.ko - sa.ok), bb = (sb.ko - sb.ok);
@@ -538,7 +490,7 @@ function startDaily(){
   step();
 }
 
-/* 21) Duel local (2 joueurs alternent) */
+/* 21) Duel local */
 function startDuel(){
   let turn=0, score=[0,0], total=10, count=0;
   function next(){
@@ -555,12 +507,9 @@ function startDuel(){
   next();
 }
 
-/* =======================
-   DnD Handlers already declared above
-======================= */
-
 /* ============== Init ============== */
-renderToolbar(); renderHUD(); showLesson();
+function renderHUD(){ /* already defined above, keep after toolbar */ }
+renderToolbar(); saveStats(); showLesson();
 </script>
 </body>
 </html>
