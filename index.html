@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Révision Italien — Loisirs</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1, h2 { text-align: center; color: #2c3e50; }
+    .card { background: white; padding: 15px; margin: 10px auto; border-radius: 10px; max-width: 600px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .emoji { font-size: 24px; margin-right: 8px; }
+    .question { margin: 10px 0; }
+    button { padding: 8px 15px; margin-top: 10px; cursor: pointer; border: none; background: #2c3e50; color: white; border-radius: 5px; }
+    button:hover { background: #34495e; }
+    .result { margin-top: 10px; font-weight: bold; }
+    input { padding: 5px; }
+  </style>
+</head>
+<body>
+  <h1>📘 Révision Italien — Loisirs et Activités</h1>
+
+  <!-- LEÇON -->
+  <div class="card">
+    <h2>📖 Leçon</h2>
+    <ul>
+      <li><span class="emoji">🧘</span> Fare yoga = faire du yoga</li>
+      <li><span class="emoji">🎣</span> Pescare = pêcher</li>
+      <li><span class="emoji">⚽</span> Giocare a calcio = jouer au foot</li>
+      <li><span class="emoji">🚲</span> Andare in bici = aller à vélo</li>
+      <li><span class="emoji">🏀</span> Giocare a basket = jouer au basket</li>
+      <li><span class="emoji">🏐</span> Giocare a pallavolo = jouer au volley</li>
+      <li><span class="emoji">🏏</span> Giocare a cricket = jouer au cricket</li>
+      <li><span class="emoji">🎸</span> Suonare la chitarra = jouer de la guitare</li>
+      <li><span class="emoji">🎤</span> Cantare = chanter</li>
+      <li><span class="emoji">🎨</span> Dipingere = peindre</li>
+      <li><span class="emoji">🎧</span> Ascoltare la musica = écouter de la musique</li>
+      <li><span class="emoji">🎭</span> Andare a teatro = aller au théâtre</li>
+      <li><span class="emoji">🎬</span> Andare al cinema = aller au cinéma</li>
+      <li><span class="emoji">📖</span> Leggere = lire</li>
+      <li><span class="emoji">🎮</span> Giocare ai videogiochi = jouer aux jeux vidéo</li>
+      <li><span class="emoji">✈️</span> Viaggiare = voyager</li>
+    </ul>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="card">
+    <h2>📝 Quiz (choix multiple)</h2>
+    <div class="question">
+      <p>Que veut dire <b>“Giocare a calcio”</b> ?</p>
+      <select id="q1">
+        <option value="">-- Choisis --</option>
+        <option value="foot">Jouer au foot</option>
+        <option value="basket">Jouer au basket</option>
+        <option value="musique">Écouter de la musique</option>
+      </select>
+    </div>
+    <div class="question">
+      <p>Que veut dire <b>“Andare al cinema”</b> ?</p>
+      <select id="q2">
+        <option value="">-- Choisis --</option>
+        <option value="voyager">Voyager</option>
+        <option value="cinema">Aller au cinéma</option>
+        <option value="chanter">Chanter</option>
+      </select>
+    </div>
+    <button onclick="checkQuiz()">Vérifier</button>
+    <div id="quizResult" class="result"></div>
+  </div>
+
+  <!-- EXERCICE -->
+  <div class="card">
+    <h2>✍️ Exercice (complète)</h2>
+    <p>Traduis en français : <b>“Suonare la chitarra”</b></p>
+    <input type="text" id="ex1" placeholder="Ta réponse ici">
+    <button onclick="checkEx()">Vérifier</button>
+    <div id="exResult" class="result"></div>
+  </div>
+
+  <script>
+    function checkQuiz() {
+      let score = 0;
+      if (document.getElementById("q1").value === "foot") score++;
+      if (document.getElementById("q2").value === "cinema") score++;
+      document.getElementById("quizResult").innerText = "Score : " + score + "/2";
+    }
+    function checkEx() {
+      let ans = document.getElementById("ex1").value.trim().toLowerCase();
+      if (ans.includes("guitare")) {
+        document.getElementById("exResult").innerText = "✅ Bravo !";
+      } else {
+        document.getElementById("exResult").innerText = "❌ Mauvaise réponse. C'était : jouer de la guitare.";
+      }
+    }
+  </script>
+</body>
+</html>
