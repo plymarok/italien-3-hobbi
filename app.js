@@ -55,13 +55,33 @@ const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(
 const pick = (arr,n=1)=>shuffle([...arr]).slice(0,n);
 const norm = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 
-/* ✅ Garantit que la bonne réponse est toujours incluse */
+/* ✅ Helper options QCM — garantit la présence du bon choix */
 function makeOptions(correct, count = 3) {
   const pool = DATA.map(x => x.fr);
   const distractors = shuffle(pool.filter(x => x !== correct));
   const take = Math.max(0, Math.min(count - 1, distractors.length));
   const opts = [correct, ...distractors.slice(0, take)];
   return shuffle(opts);
+}
+
+/* ==== Toast local au jeu ==== */
+function notify(message, type="ok", ms=900){
+  const parent = document.getElementById("content");
+  if(!parent) return Promise.resolve();
+
+  const box = document.createElement("div");
+  box.className = `toast ${type}`;
+  const icon = type === "ok" ? "✅" : "❌";
+  box.innerHTML = `<span class="icon">${icon}</span><span>${message}</span>`;
+
+  parent.appendChild(box);
+  requestAnimationFrame(()=> box.classList.add("show"));
+
+  return new Promise(resolve=>{
+    const close = () => { box.classList.remove("show"); setTimeout(()=>{ box.remove(); resolve(); }, 180); };
+    const t = setTimeout(close, ms);
+    box.addEventListener("click", ()=>{ clearTimeout(t); close(); });
+  });
 }
 
 /* ========= Progression (localStorage) ========= */
@@ -97,7 +117,7 @@ function resetProgress(){
   STATS = loadStats(); saveStats();
 }
 
-/* ========= Jeux (logiques) ========= */
+/* ========= Jeux ========= */
 
 /* 1) Leçon */
 function showLesson(){
@@ -105,7 +125,7 @@ function showLesson(){
   setHTML($("#content"), `<h2>📖 Leçon</h2><ul class="list">${list}</ul>`);
 }
 
-/* 2) Quiz (QCM) — corrigé avec makeOptions */
+/* 2) Quiz (QCM) */
 function startQuiz(){
   const q = pick(DATA)[0];
   const opts = makeOptions(q.fr, 3);
@@ -118,9 +138,9 @@ function startQuiz(){
     btn.addEventListener("click", () => {
       const {it, ans, correct} = btn.dataset;
       const ok = (ans===correct);
-      alert(ok ? "✅ Bravo !" : "❌ Mauvaise réponse.\n→ " + correct);
       recordResult(it, ok);
-      startQuiz();
+      notify(ok ? "Bravo !" : "Mauvaise réponse. → " + correct, ok ? "ok" : "bad")
+        .then(startQuiz);
     });
   });
 }
@@ -146,7 +166,7 @@ function speak(text){
   u.lang="it-IT"; speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 
-/* 5) Vrai/Faux — OK */
+/* 5) Vrai/Faux */
 function startVF(){
   const q = pick(DATA)[0], r = pick(DATA)[0];
   const isTrue = (q.fr===r.fr);
@@ -155,13 +175,14 @@ function startVF(){
     <button class="btn ok" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},true)">Vrai</button>
     <button class="btn bad" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},false)">Faux</button>`);
 }
-function vfCheck(it,truth,ans){
-  const ok = (truth===ans);
-  alert(ok?"✅ Bravo !":"❌ Mauvais choix.");
-  recordResult(it,ok); startVF();
+function vfCheck(it,truth,answer){
+  const ok = (truth===answer);
+  recordResult(it, ok);
+  notify(ok ? "Bravo !" : "Mauvais choix.", ok ? "ok" : "bad")
+    .then(startVF);
 }
 
-/* 6) Drag & Drop — OK */
+/* 6) Drag & Drop */
 function startDragDrop(){
   const left = shuffle([...DATA]);
   const right = shuffle([...DATA]);
@@ -181,7 +202,7 @@ function drop(e, fr){
   recordResult(data.it, ok);
 }
 
-/* 7) Révision minute — OK */
+/* 7) Révision minute */
 let autoTimer=null, autoIndex=0;
 function startAuto(){
   clearInterval(autoTimer); autoIndex=0;
@@ -193,11 +214,14 @@ function startAuto(){
   }, 3000);
 }
 
-/* 8) Challenge chrono — corrigé avec makeOptions */
+/* 8) Challenge chrono */
 let chronoScore=0, chronoCount=0;
 function startChrono(){ chronoScore=0; chronoCount=0; chronoNext(); }
 function chronoNext(){
-  if(chronoCount>=10){ alert("Score final : "+chronoScore+"/10"); return; }
+  if(chronoCount>=10){
+    notify("Score final : "+chronoScore+"/10", "ok");
+    return;
+  }
   chronoCount++;
   const q = pick(DATA)[0];
   const opts = makeOptions(q.fr, 3);
@@ -215,7 +239,7 @@ function chronoNext(){
   });
 }
 
-/* 9) Memory — OK */
+/* 9) Memory */
 let mem=[], memFlipped=[], memFound=0;
 function startMemory(){
   mem=[]; memFlipped=[]; memFound=0;
@@ -230,10 +254,11 @@ function flip(i){
     if(memFlipped.length===2){
       setTimeout(()=>{
         const [a,b]=memFlipped;
-        if(a.text===b.pair){ $("#m"+a.i).classList.add("ok"); $("#m"+b.i).classList.add("ok"); memFound++;
+        if(a.text===b.pair){
+          $("#m"+a.i).classList.add("ok"); $("#m"+b.i).classList.add("ok"); memFound++;
           const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
           if(it) recordResult(it,true);
-          if(memFound===DATA.length) alert("🎉 Bravo ! Memory terminé.");
+          if(memFound===DATA.length) notify("Bravo ! Memory terminé.", "ok");
         } else {
           $("#m"+a.i).textContent='?'; $("#m"+b.i).textContent='?';
           const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
@@ -245,7 +270,7 @@ function flip(i){
   }
 }
 
-/* 10) Dictée inversée — OK */
+/* 10) Dictée inversée */
 function startDictee(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>⌨️ Dictée inversée</h2>
@@ -258,13 +283,13 @@ function startDictee(){
   $("#dicteeIn").focus();
 }
 function dicteeCheck(it){
-  const val = norm($("#dicteeIn").value);
-  const ok = (val===norm(it));
-  alert(ok?"✅ Juste !":"❌ Attendu : "+it);
-  recordResult(it,ok); startDictee();
+  const ok = (norm($("#dicteeIn").value) === norm(it));
+  recordResult(it, ok);
+  notify(ok ? "Juste !" : "Attendu : " + it, ok ? "ok" : "bad")
+    .then(startDictee);
 }
 
-/* 11) Bingo 4×4 — OK (pas de QCM) */
+/* 11) Bingo 4×4 */
 let bingoCall=null;
 function startBingo(){
   const gridItems = shuffle([...DATA]);
@@ -290,10 +315,10 @@ function checkBingoWin(){
     [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],
     [0,5,10,15],[3,6,9,12]
   ];
-  for(const l of lines){ if(l.map(marked).reduce((a,b)=>a+b,0)===4){ alert("🟩 BINGO !"); break; } }
+  for(const l of lines){ if(l.map(marked).reduce((a,b)=>a+b,0)===4){ notify("BINGO !", "ok"); break; } }
 }
 
-/* 12) Intrus — OK */
+/* 12) Intrus */
 function startIntrus(){
   const cats = ["sport","art","culture","autre"];
   const baseCat = pick(cats)[0];
@@ -306,11 +331,12 @@ function startIntrus(){
 }
 function intrusCheck(it,cat,base){
   const ok = (cat!==base);
-  alert(ok?"✅ Intrus trouvé !":"❌ Non, celui-ci est de la même catégorie.");
-  recordResult(it,ok); startIntrus();
+  recordResult(it, ok);
+  notify(ok?"Intrus trouvé !":"Non, même catégorie.", ok?"ok":"bad")
+    .then(startIntrus);
 }
 
-/* 13) Peek & Hide — OK */
+/* 13) Peek & Hide */
 function startPeek(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>👀 Peek & Hide</h2>
@@ -324,11 +350,12 @@ function startPeek(){
 }
 function peekCheck(it,fr){
   const ok = norm($("#peekIn").value)===norm(fr);
-  alert(ok?"✅ Bravo !":"❌ Réponse : "+fr);
-  recordResult(it,ok); startPeek();
+  recordResult(it, ok);
+  notify(ok?"Bravo !":"Réponse : "+fr, ok?"ok":"bad")
+    .then(startPeek);
 }
 
-/* 14) Phrase Builder — OK (pas QCM rigide) */
+/* 14) Phrase Builder */
 function startPhrases(){
   const bank = shuffle([...DATA]).slice(6);
   const slots = shuffle(pick(DATA,3));
@@ -341,18 +368,18 @@ function startPhrases(){
       <div class="row">
         <button class="btn primary" onclick="phrasesCheck(['${slots[0].it.replace(/'/g,"\\'")}','${slots[1].it.replace(/'/g,"\\'")}','${slots[2].it.replace(/'/g,"\\'")}'])">Vérifier</button>
       </div>
-      <p class="muted small">Astuce: tu obtiens le point si 2/3 sont plausibles.</p>
+      <p class="muted small">Astuce: point accordé si 2/3 sont plausibles.</p>
     </div>`);
 }
 function phrasesCheck(targets){
   const vals = [$("#p1").value,$("#p2").value,$("#p3").value];
   let okCount = 0; vals.forEach(v=>{ if(targets.includes(v)) okCount++; });
   const ok = okCount>=2;
-  alert((ok? "✅ Bien joué ("+okCount+"/3)": "❌ Seulement "+okCount+"/3"));
-  const it = vals[0]; recordResult(it, ok);
+  recordResult(vals[0], ok);
+  notify(ok ? `Bien joué (${okCount}/3)` : `Seulement ${okCount}/3`, ok ? "ok" : "bad");
 }
 
-/* 15) Cible rapide — corrigé avec makeOptions */
+/* 15) Cible rapide */
 let targetTimer=null, targetTime=3000;
 function startTarget(){
   const q = pick(DATA)[0];
@@ -362,29 +389,36 @@ function startTarget(){
   <p>Vite ! <b>${q.it}</b> ${q.emoji}</p>
   ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
   clearInterval(targetTimer);
-  let t=0; targetTimer=setInterval(()=>{ t+=50; $("#bar").style.width = (t/targetTime*100)+"%"; if(t>=targetTime){ clearInterval(targetTimer); alert("⏰ Trop tard ! Réponse : "+q.fr); recordResult(q.it,false); startTarget(); } },50);
+  let t=0; targetTimer=setInterval(()=>{ t+=50; $("#bar").style.width = (t/targetTime*100)+"%";
+    if(t>=targetTime){
+      clearInterval(targetTimer);
+      recordResult(q.it,false);
+      notify("Trop tard ! → " + q.fr, "bad").then(startTarget);
+    }
+  },50);
 
   document.querySelectorAll("#content .opt").forEach(btn=>{
     btn.addEventListener("click", () => {
       clearInterval(targetTimer);
       const {it, ans, correct} = btn.dataset;
-      const ok = (ans===correct); alert(ok?"✅":"❌ "+correct);
+      const ok = (ans===correct);
       recordResult(it,ok);
       targetTime = Math.max(1200, targetTime-120);
-      startTarget();
+      notify(ok ? "Bravo !" : "Réponse : " + correct, ok ? "ok" : "bad")
+        .then(startTarget);
     });
   });
 }
 
-/* 16) Anagrammes — OK */
+/* 16) Anagrammes */
 function startAnagrammes(){
   const single = DATA.filter(d=>!/\s/.test(d.it));
   const q = (single.length? pick(single)[0] : pick(DATA)[0]);
   const letters = shuffle(q.it.replace(/\s+/g,'').split(''));
   setHTML($("#content"), `<h2>🔤 Anagrammes</h2>
     <p>Recompose : <b>${q.it.length}</b> lettres (${q.emoji})</p>
-    <div id="anaOut" class="pill ana-out"></div>
-    <div class="grid letters">
+    <div id="anaOut" class="pill" style="min-height:38px;display:inline-block;padding:8px 12px"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(42px,1fr));max-width:480px">
       ${letters.map((c,i)=>`<button class="btn key" id="l${i}" onclick="anaPick('${c}','l${i}')">${c}</button>`).join("")}
     </div>
     <div class="row">
@@ -398,11 +432,12 @@ function anaPick(c,id){
 function anaCheck(target){
   const val = $("#anaOut").textContent;
   const ok = (norm(val)===norm(target.replace(/\s+/g,'')));
-  alert(ok?"✅ Bravo !":"❌ Réponse : "+target);
-  recordResult(target, ok); startAnagrammes();
+  recordResult(target, ok);
+  notify(ok?"Bravo !":"Réponse : "+target, ok?"ok":"bad")
+    .then(startAnagrammes);
 }
 
-/* 17) Shadowing — OK */
+/* 17) Shadowing */
 function startShadow(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>🎤 Shadowing</h2>
@@ -416,7 +451,7 @@ function shadowPlay(text){
   let i=0; const id=setInterval(()=>{ el.innerHTML = `<span class="hl">${text.slice(0,i)}</span>${text.slice(i)}`; i++; if(i>text.length){ clearInterval(id);} }, 80);
 }
 
-/* 18) Pièges — OK */
+/* 18) Pièges */
 function startPieges(){
   const sports = DATA.filter(d=>d.cat==="sport");
   const q = (sports.length? pick(sports)[0] : pick(DATA)[0]);
@@ -428,11 +463,12 @@ function startPieges(){
 }
 function piegesCheck(it,ans,correct){
   const ok = (ans===correct);
-  alert(ok?"✅ Précision !":"❌ C’était : "+correct);
-  recordResult(it,ok); startPieges();
+  recordResult(it, ok);
+  notify(ok?"Précision !":"C’était : "+correct, ok?"ok":"bad")
+    .then(startPieges);
 }
 
-/* 19) Roue des jeux — OK */
+/* 19) Roue des jeux */
 function startWheel(){
   const list = ["quiz","vf","flash","drag","dictee","bingo","intrus","peek","phrases","target","anag","shadow","memory","chrono"];
   setHTML($("#content"), `<h2>🎡 Roue des jeux</h2><div class="wheel" id="wheel"></div><div class="wheel-pointer"></div>
@@ -460,10 +496,13 @@ function spinWheel(){
   const final = turns + stopAt*angle + angle/2;
   wheel.style.transition="transform 3s cubic-bezier(.25,.9,.25,1)";
   wheel.style.transform=`rotate(${final}deg)`;
-  setTimeout(()=>{ const id=list[stopAt]; const game = GAMES.find(g=>g.id===id); alert("🎯 "+game.label); game.run(); }, 3200);
+  setTimeout(()=>{
+    const id=list[stopAt]; const game = GAMES.find(g=>g.id===id);
+    notify("→ " + game.label, "ok", 800).then(()=> game.run());
+  }, 3200);
 }
 
-/* 20) Révision du jour — corrigé avec makeOptions */
+/* 20) Révision du jour */
 function startDaily(){
   const items = [...DATA].sort((a,b)=>{
     const sa=STATS.items[a.it], sb=STATS.items[b.it];
@@ -472,7 +511,7 @@ function startDaily(){
   }).slice(0,5);
   let i=0, score=0;
   function step(){
-    if(i>=items.length){ alert("🗓️ Terminé : "+score+"/"+items.length); return; }
+    if(i>=items.length){ notify("Terminé : "+score+"/"+items.length, "ok"); return; }
     const q=items[i];
     const opts = makeOptions(q.fr, 3);
     setHTML($("#content"), `<h2>🗓️ Révision du jour</h2>
@@ -491,11 +530,14 @@ function startDaily(){
   step();
 }
 
-/* 21) Duel local — corrigé avec makeOptions */
+/* 21) Duel local */
 function startDuel(){
   let turn=0, score=[0,0], total=10, count=0;
   function next(){
-    if(count>=total){ alert(`🏁 Fin du duel\nJoueur 1: ${score[0]}\nJoueur 2: ${score[1]}`); return; }
+    if(count>=total){
+      notify(`Fin du duel — J1: ${score[0]} | J2: ${score[1]}`, "ok");
+      return;
+    }
     const p = (turn%2);
     const q = pick(DATA)[0];
     const opts = makeOptions(q.fr, 3);
