@@ -55,6 +55,11 @@ const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(
 const pick = (arr,n=1)=>shuffle([...arr]).slice(0,n);
 const norm = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 
+/* Index rapides pour retrouver l'emoji par traduction */
+const MAP_BY_FR = Object.fromEntries(DATA.map(d=>[d.fr, d]));
+const MAP_BY_IT = Object.fromEntries(DATA.map(d=>[d.it, d]));
+const em = fr => (MAP_BY_FR[fr]?.emoji) || "";
+
 /* ✅ Helper options QCM — garantit la présence du bon choix */
 function makeOptions(correct, count = 3) {
   const pool = DATA.map(x => x.fr);
@@ -68,15 +73,12 @@ function makeOptions(correct, count = 3) {
 function notify(message, type="ok", ms=900){
   const parent = document.getElementById("content");
   if(!parent) return Promise.resolve();
-
   const box = document.createElement("div");
   box.className = `toast ${type}`;
   const icon = type === "ok" ? "✅" : "❌";
   box.innerHTML = `<span class="icon">${icon}</span><span>${message}</span>`;
-
   parent.appendChild(box);
   requestAnimationFrame(()=> box.classList.add("show"));
-
   return new Promise(resolve=>{
     const close = () => { box.classList.remove("show"); setTimeout(()=>{ box.remove(); resolve(); }, 180); };
     const t = setTimeout(close, ms);
@@ -119,20 +121,20 @@ function resetProgress(){
 
 /* ========= Jeux ========= */
 
-/* 1) Leçon */
+/* 1) Leçon (pas d'emoji dans l'intitulé italien) */
 function showLesson(){
-  const list = DATA.map(d=>`<li>${d.emoji} <b>${d.it}</b> = ${d.fr} <span class="pill">${d.cat}</span></li>`).join("");
+  const list = DATA.map(d=>`<li><b>${d.it}</b> = ${d.fr} <span class="pill">${d.cat}</span></li>`).join("");
   setHTML($("#content"), `<h2>📖 Leçon</h2><ul class="list">${list}</ul>`);
 }
 
-/* 2) Quiz (QCM) */
+/* 2) Quiz — emoji dans les réponses (pas dans la question) */
 function startQuiz(){
   const q = pick(DATA)[0];
   const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `
     <h2>📝 Quiz</h2>
-    <p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
-    ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}
+    <p>Que veut dire <b>${q.it}</b> ?</p>
+    ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${em(o)} ${o}</button>`).join(" ")}
   `);
   document.querySelectorAll("#content .opt").forEach(btn=>{
     btn.addEventListener("click", () => {
@@ -145,17 +147,17 @@ function startQuiz(){
   });
 }
 
-/* 3) Flashcards */
+/* 3) Flashcards — emoji seulement côté réponse (après flip) */
 function startFlashcards(){
   setHTML($("#content"), `<h2>🎴 Flashcards</h2>
     <div class="grid">${DATA.map(d=>`
-      <div class="card center" onclick="this.dataset.flip^=1; this.innerHTML = (this.dataset.flip%2==1)?'${d.emoji} <b>${d.it}</b><br><span class=muted>cliquer</span>':'${d.emoji} <b>${d.it}</b><br>${d.fr}'">
-        ${d.emoji} <b>${d.it}</b><br><span class="muted">cliquer</span>
+      <div class="card center" onclick="this.dataset.flip^=1; this.innerHTML = (this.dataset.flip%2==1)?'<b>${d.it}</b><br><span class=muted>cliquer</span>':'${d.emoji} ${d.fr}'">
+        <b>${d.it}</b><br><span class="muted">cliquer</span>
       </div>`).join("")}
     </div>`);
 }
 
-/* 4) Audio */
+/* 4) Audio — emojis conservés (travail de prononciation) */
 function startAudio(){
   setHTML($("#content"), `<h2>🔊 Écoute et répète</h2>
   <p class="muted small">Cliquer pour entendre l’italien (voix du navigateur).</p>
@@ -166,12 +168,12 @@ function speak(text){
   u.lang="it-IT"; speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 
-/* 5) Vrai/Faux */
+/* 5) Vrai/Faux — pas d'emoji dans la question */
 function startVF(){
   const q = pick(DATA)[0], r = pick(DATA)[0];
   const isTrue = (q.fr===r.fr);
   setHTML($("#content"), `<h2>🎲 Vrai ou Faux</h2>
-    <p>${q.it} ${q.emoji} = ${r.fr}</p>
+    <p>${q.it} = ${r.fr}</p>
     <button class="btn ok" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},true)">Vrai</button>
     <button class="btn bad" onclick="vfCheck('${q.it.replace(/'/g,"\\'")}',${isTrue},false)">Faux</button>`);
 }
@@ -182,14 +184,14 @@ function vfCheck(it,truth,answer){
     .then(startVF);
 }
 
-/* 6) Drag & Drop */
+/* 6) Associer — emojis uniquement côté réponses (FR) */
 function startDragDrop(){
   const left = shuffle([...DATA]);
   const right = shuffle([...DATA]);
   setHTML($("#content"), `<h2>🧩 Associer</h2>
   <div class="grid">
-    <div class="card"><h3>Italien</h3>${left.map(d=>`<span class="drag" draggable="true" ondragstart="drag(event,'${d.fr.replace(/'/g,"\\'")}','${d.it.replace(/'/g,"\\'")}')">${d.emoji} ${d.it}</span>`).join("")}</div>
-    <div class="card"><h3>Français</h3>${right.map(d=>`<div class="dropzone" ondragover="allowDrop(event)" ondrop="drop(event,'${d.fr.replace(/'/g,"\\'")}')">${d.fr}</div>`).join("")}</div>
+    <div class="card"><h3>Italien</h3>${left.map(d=>`<span class="drag" draggable="true" ondragstart="drag(event,'${d.fr.replace(/'/g,"\\'")}','${d.it.replace(/'/g,"\\'")}')">${d.it}</span>`).join("")}</div>
+    <div class="card"><h3>Français</h3>${right.map(d=>`<div class="dropzone" ondragover="allowDrop(event)" ondrop="drop(event,'${d.fr.replace(/'/g,"\\'")}')">${d.emoji} ${d.fr}</div>`).join("")}</div>
   </div>`);
 }
 function allowDrop(e){ e.preventDefault(); }
@@ -202,7 +204,7 @@ function drop(e, fr){
   recordResult(data.it, ok);
 }
 
-/* 7) Révision minute */
+/* 7) Révision minute — affichage passif (emoji toléré) */
 let autoTimer=null, autoIndex=0;
 function startAuto(){
   clearInterval(autoTimer); autoIndex=0;
@@ -214,7 +216,7 @@ function startAuto(){
   }, 3000);
 }
 
-/* 8) Challenge chrono */
+/* 8) Challenge chrono — emoji dans les réponses */
 let chronoScore=0, chronoCount=0;
 function startChrono(){ chronoScore=0; chronoCount=0; chronoNext(); }
 function chronoNext(){
@@ -226,8 +228,8 @@ function chronoNext(){
   const q = pick(DATA)[0];
   const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `<h2>🏆 Challenge chrono</h2>
-  <p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
-  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
+  <p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ?</p>
+  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${em(o)} ${o}</button>`).join(" ")}`);
   document.querySelectorAll("#content .opt").forEach(btn=>{
     btn.addEventListener("click", () => {
       const {it, ans, correct} = btn.dataset;
@@ -239,7 +241,7 @@ function chronoNext(){
   });
 }
 
-/* 9) Memory */
+/* 9) Memory — inchangé (pas d'emoji révélateur) */
 let mem=[], memFlipped=[], memFound=0;
 function startMemory(){
   mem=[]; memFlipped=[]; memFound=0;
@@ -256,12 +258,12 @@ function flip(i){
         const [a,b]=memFlipped;
         if(a.text===b.pair){
           $("#m"+a.i).classList.add("ok"); $("#m"+b.i).classList.add("ok"); memFound++;
-          const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
+          const it = (MAP_BY_IT[a.text]?.it)|| (MAP_BY_IT[b.text]?.it) || (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
           if(it) recordResult(it,true);
           if(memFound===DATA.length) notify("Bravo ! Memory terminé.", "ok");
         } else {
           $("#m"+a.i).textContent='?'; $("#m"+b.i).textContent='?';
-          const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
+          const it = (MAP_BY_IT[a.text]?.it)|| (MAP_BY_IT[b.text]?.it) || (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
           if(it) recordResult(it,false);
         }
         memFlipped=[];
@@ -270,11 +272,11 @@ function flip(i){
   }
 }
 
-/* 10) Dictée inversée */
+/* 10) Dictée inversée — sans emoji dans l’énoncé */
 function startDictee(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>⌨️ Dictée inversée</h2>
-    <p>Écris en italien : <b>${q.fr}</b> ${q.emoji}</p>
+    <p>Écris en italien : <b>${q.fr}</b></p>
     <input id="dicteeIn" type="text" placeholder="Tape l’italien ici" onkeydown="if(event.key==='Enter') dicteeCheck('${q.it.replace(/'/g,"\\'")}')" />
     <div class="row">
       <button class="btn primary" onclick="dicteeCheck('${q.it.replace(/'/g,"\\'")}')">Vérifier</button>
@@ -289,7 +291,7 @@ function dicteeCheck(it){
     .then(startDictee);
 }
 
-/* 11) Bingo 4×4 */
+/* 11) Bingo 4×4 — emojis dans les réponses (OK) */
 let bingoCall=null;
 function startBingo(){
   const gridItems = shuffle([...DATA]);
@@ -310,15 +312,11 @@ function bingoNext(){ bingoCall = pick(DATA)[0]; $("#bingoCall").textContent = b
 function checkBingoWin(){
   const cells=[...document.querySelectorAll(".bingo-cell")];
   const marked = i=>cells[i].classList.contains("mark")?1:0;
-  const lines=[
-    [0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],
-    [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],
-    [0,5,10,15],[3,6,9,12]
-  ];
+  const lines=[[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],[0,5,10,15],[3,6,9,12]];
   for(const l of lines){ if(l.map(marked).reduce((a,b)=>a+b,0)===4){ notify("BINGO !", "ok"); break; } }
 }
 
-/* 12) Intrus */
+/* 12) Intrus — emojis dans les réponses (OK) */
 function startIntrus(){
   const cats = ["sport","art","culture","autre"];
   const baseCat = pick(cats)[0];
@@ -336,16 +334,16 @@ function intrusCheck(it,cat,base){
     .then(startIntrus);
 }
 
-/* 13) Peek & Hide */
+/* 13) Peek & Hide — sans emoji dans le mot affiché */
 function startPeek(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>👀 Peek & Hide</h2>
     <p>Regarde vite, puis traduis en français.</p>
-    <div id="peekWord" class="peek">${q.emoji} <b>${q.it}</b></div>
+    <div id="peekWord" class="peek"><b>${q.it}</b></div>
     <input id="peekIn" type="text" placeholder="Traduction FR" onkeydown="if(event.key==='Enter') peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')" />
     <div class="row"><button class="btn primary" onclick="peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">Vérifier</button></div>
   `);
-  setTimeout(()=>$("#peekWord").innerHTML = "••••••••••••", 1200);
+  setTimeout(()=>$("#peekWord").textContent = "••••••••••••", 1200);
   $("#peekIn").focus();
 }
 function peekCheck(it,fr){
@@ -355,7 +353,7 @@ function peekCheck(it,fr){
     .then(startPeek);
 }
 
-/* 14) Phrase Builder */
+/* 14) Phrase Builder — (menus en IT, sans emoji) */
 function startPhrases(){
   const bank = shuffle([...DATA]).slice(6);
   const slots = shuffle(pick(DATA,3));
@@ -379,15 +377,15 @@ function phrasesCheck(targets){
   notify(ok ? `Bien joué (${okCount}/3)` : `Seulement ${okCount}/3`, ok ? "ok" : "bad");
 }
 
-/* 15) Cible rapide */
+/* 15) Cible rapide — emoji dans les réponses */
 let targetTimer=null, targetTime=3000;
 function startTarget(){
   const q = pick(DATA)[0];
   const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `<h2>🎯 Cible rapide</h2>
   <div class="progress"><div id="bar" class="bar"></div></div>
-  <p>Vite ! <b>${q.it}</b> ${q.emoji}</p>
-  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
+  <p>Vite ! <b>${q.it}</b></p>
+  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${em(o)} ${o}</button>`).join(" ")}`);
   clearInterval(targetTimer);
   let t=0; targetTimer=setInterval(()=>{ t+=50; $("#bar").style.width = (t/targetTime*100)+"%";
     if(t>=targetTime){
@@ -396,7 +394,6 @@ function startTarget(){
       notify("Trop tard ! → " + q.fr, "bad").then(startTarget);
     }
   },50);
-
   document.querySelectorAll("#content .opt").forEach(btn=>{
     btn.addEventListener("click", () => {
       clearInterval(targetTimer);
@@ -410,13 +407,13 @@ function startTarget(){
   });
 }
 
-/* 16) Anagrammes */
+/* 16) Anagrammes — sans emoji dans l'énoncé */
 function startAnagrammes(){
   const single = DATA.filter(d=>!/\s/.test(d.it));
   const q = (single.length? pick(single)[0] : pick(DATA)[0]);
   const letters = shuffle(q.it.replace(/\s+/g,'').split(''));
   setHTML($("#content"), `<h2>🔤 Anagrammes</h2>
-    <p>Recompose : <b>${q.it.length}</b> lettres (${q.emoji})</p>
+    <p>Recompose : <b>${q.it.length}</b> lettres</p>
     <div id="anaOut" class="pill" style="min-height:38px;display:inline-block;padding:8px 12px"></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(42px,1fr));max-width:480px">
       ${letters.map((c,i)=>`<button class="btn key" id="l${i}" onclick="anaPick('${c}','l${i}')">${c}</button>`).join("")}
@@ -437,7 +434,7 @@ function anaCheck(target){
     .then(startAnagrammes);
 }
 
-/* 17) Shadowing */
+/* 17) Shadowing — emojis conservés */
 function startShadow(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>🎤 Shadowing</h2>
@@ -451,15 +448,15 @@ function shadowPlay(text){
   let i=0; const id=setInterval(()=>{ el.innerHTML = `<span class="hl">${text.slice(0,i)}</span>${text.slice(i)}`; i++; if(i>text.length){ clearInterval(id);} }, 80);
 }
 
-/* 18) Pièges */
+/* 18) Pièges — emoji dans les réponses uniquement */
 function startPieges(){
-  const sports = DATA.filter(d=>d.cat==="sport");
-  const q = (sports.length? pick(sports)[0] : pick(DATA)[0]);
-  const trap = pick(DATA.filter(d=>d.cat===q.cat && d.fr!==q.fr))[0]?.fr || pick(DATA)[0].fr;
+  const pool = DATA;
+  const q = pick(pool)[0];
+  const trap = pick(pool.filter(d=>d.cat===q.cat && d.fr!==q.fr))[0]?.fr || pick(DATA)[0].fr;
   const opts = shuffle([q.fr, trap]);
   setHTML($("#content"), `<h2>⚠️ Pièges</h2>
-    <p>Choisis la traduction EXACTE de <b>${q.it}</b> ${q.emoji}</p>
-    ${opts.map(o=>`<button class="btn" onclick="piegesCheck('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+    <p>Choisis la traduction EXACTE de <b>${q.it}</b></p>
+    ${opts.map(o=>`<button class="btn" onclick="piegesCheck('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${em(o)} ${o}</button>`).join(" ")}`);
 }
 function piegesCheck(it,ans,correct){
   const ok = (ans===correct);
@@ -468,7 +465,7 @@ function piegesCheck(it,ans,correct){
     .then(startPieges);
 }
 
-/* 19) Roue des jeux */
+/* 19) Roue des jeux — inchangé */
 function startWheel(){
   const list = ["quiz","vf","flash","drag","dictee","bingo","intrus","peek","phrases","target","anag","shadow","memory","chrono"];
   setHTML($("#content"), `<h2>🎡 Roue des jeux</h2><div class="wheel" id="wheel"></div><div class="wheel-pointer"></div>
@@ -502,7 +499,7 @@ function spinWheel(){
   }, 3200);
 }
 
-/* 20) Révision du jour */
+/* 20) Révision du jour — emoji dans les réponses */
 function startDaily(){
   const items = [...DATA].sort((a,b)=>{
     const sa=STATS.items[a.it], sb=STATS.items[b.it];
@@ -515,8 +512,8 @@ function startDaily(){
     const q=items[i];
     const opts = makeOptions(q.fr, 3);
     setHTML($("#content"), `<h2>🗓️ Révision du jour</h2>
-      <p>${i+1}/5 — <b>${q.it}</b> ${q.emoji}</p>
-      ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
+      <p>${i+1}/5 — <b>${q.it}</b></p>
+      ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${em(o)} ${o}</button>`).join(" ")}`);
     document.querySelectorAll("#content .opt").forEach(btn=>{
       btn.addEventListener("click", () => {
         const {it, ans, correct} = btn.dataset;
@@ -530,7 +527,7 @@ function startDaily(){
   step();
 }
 
-/* 21) Duel local */
+/* 21) Duel local — emoji dans les réponses */
 function startDuel(){
   let turn=0, score=[0,0], total=10, count=0;
   function next(){
@@ -543,8 +540,8 @@ function startDuel(){
     const opts = makeOptions(q.fr, 3);
     setHTML($("#content"), `<h2>👥 Duel local</h2>
       <p>Tour du <b>Joueur ${p+1}</b> — ${count+1}/${total}</p>
-      <p>Traduire : <b>${q.it}</b> ${q.emoji}</p>
-      <div>${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}</div>
+      <p>Traduire : <b>${q.it}</b></p>
+      <div>${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${em(o)} ${o}</button>`).join(" ")}</div>
       <p class="muted small">Scores — J1: ${score[0]} | J2: ${score[1]}</p>`);
     document.querySelectorAll("#content .opt").forEach(btn=>{
       btn.addEventListener("click", () => {
