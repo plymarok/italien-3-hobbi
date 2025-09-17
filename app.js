@@ -3,7 +3,7 @@ const THEME_KEY = "it_memo_theme";
 const themeBtn = () => document.getElementById("themeToggle");
 
 function applySavedTheme() {
-  const saved = localStorage.getItem(THEME_KEY); // "dark" | "light" | null
+  const saved = localStorage.getItem(THEME_KEY);
   const html = document.documentElement;
   if (saved === "dark") html.setAttribute("data-theme", "dark");
   else if (saved === "light") html.setAttribute("data-theme", "light");
@@ -55,6 +55,15 @@ const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(
 const pick = (arr,n=1)=>shuffle([...arr]).slice(0,n);
 const norm = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 
+/* ✅ Garantit que la bonne réponse est toujours incluse */
+function makeOptions(correct, count = 3) {
+  const pool = DATA.map(x => x.fr);
+  const distractors = shuffle(pool.filter(x => x !== correct));
+  const take = Math.max(0, Math.min(count - 1, distractors.length));
+  const opts = [correct, ...distractors.slice(0, take)];
+  return shuffle(opts);
+}
+
 /* ========= Progression (localStorage) ========= */
 const KEY_STATS="it_memo_stats_v1";
 let STATS = loadStats();
@@ -96,21 +105,24 @@ function showLesson(){
   setHTML($("#content"), `<h2>📖 Leçon</h2><ul class="list">${list}</ul>`);
 }
 
-/* 2) Quiz */
+/* 2) Quiz (QCM) — corrigé avec makeOptions */
 function startQuiz(){
   const q = pick(DATA)[0];
-  const opts = shuffle([q.fr, ...pick(DATA,5).map(x=>x.fr)]).slice(0,3);
+  const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `
     <h2>📝 Quiz</h2>
     <p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
-    ${opts.map(o=>`<button class="btn" onclick="quizCheck('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}
+    ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}
   `);
-}
-function quizCheck(it,ans,correct){
-  const ok = (ans===correct);
-  alert(ok ? "✅ Bravo !" : "❌ Mauvaise réponse.\n→ " + correct);
-  recordResult(it, ok);
-  startQuiz();
+  document.querySelectorAll("#content .opt").forEach(btn=>{
+    btn.addEventListener("click", () => {
+      const {it, ans, correct} = btn.dataset;
+      const ok = (ans===correct);
+      alert(ok ? "✅ Bravo !" : "❌ Mauvaise réponse.\n→ " + correct);
+      recordResult(it, ok);
+      startQuiz();
+    });
+  });
 }
 
 /* 3) Flashcards */
@@ -134,7 +146,7 @@ function speak(text){
   u.lang="it-IT"; speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 
-/* 5) Vrai/Faux */
+/* 5) Vrai/Faux — OK */
 function startVF(){
   const q = pick(DATA)[0], r = pick(DATA)[0];
   const isTrue = (q.fr===r.fr);
@@ -149,7 +161,7 @@ function vfCheck(it,truth,ans){
   recordResult(it,ok); startVF();
 }
 
-/* 6) Drag & Drop */
+/* 6) Drag & Drop — OK */
 function startDragDrop(){
   const left = shuffle([...DATA]);
   const right = shuffle([...DATA]);
@@ -169,7 +181,7 @@ function drop(e, fr){
   recordResult(data.it, ok);
 }
 
-/* 7) Révision minute */
+/* 7) Révision minute — OK */
 let autoTimer=null, autoIndex=0;
 function startAuto(){
   clearInterval(autoTimer); autoIndex=0;
@@ -181,20 +193,29 @@ function startAuto(){
   }, 3000);
 }
 
-/* 8) Challenge chrono */
+/* 8) Challenge chrono — corrigé avec makeOptions */
 let chronoScore=0, chronoCount=0;
 function startChrono(){ chronoScore=0; chronoCount=0; chronoNext(); }
 function chronoNext(){
   if(chronoCount>=10){ alert("Score final : "+chronoScore+"/10"); return; }
   chronoCount++;
   const q = pick(DATA)[0];
-  const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+  const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `<h2>🏆 Challenge chrono</h2>
   <p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
-  ${opts.map(o=>`<button class="btn" onclick="(function(x){ if(x==='${q.fr.replace(/'/g,"\\'")}'){chronoScore++;recordResult('${q.it.replace(/'/g,"\\'")}',true);} else {recordResult('${q.it.replace(/'/g,"\\'")}',false);} chronoNext(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
+  document.querySelectorAll("#content .opt").forEach(btn=>{
+    btn.addEventListener("click", () => {
+      const {it, ans, correct} = btn.dataset;
+      const ok = (ans===correct);
+      if(ok) chronoScore++;
+      recordResult(it, ok);
+      chronoNext();
+    });
+  });
 }
 
-/* 9) Memory */
+/* 9) Memory — OK */
 let mem=[], memFlipped=[], memFound=0;
 function startMemory(){
   mem=[]; memFlipped=[]; memFound=0;
@@ -224,7 +245,7 @@ function flip(i){
   }
 }
 
-/* 10) Dictée inversée */
+/* 10) Dictée inversée — OK */
 function startDictee(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>⌨️ Dictée inversée</h2>
@@ -243,7 +264,7 @@ function dicteeCheck(it){
   recordResult(it,ok); startDictee();
 }
 
-/* 11) Bingo 4×4 */
+/* 11) Bingo 4×4 — OK (pas de QCM) */
 let bingoCall=null;
 function startBingo(){
   const gridItems = shuffle([...DATA]);
@@ -272,7 +293,7 @@ function checkBingoWin(){
   for(const l of lines){ if(l.map(marked).reduce((a,b)=>a+b,0)===4){ alert("🟩 BINGO !"); break; } }
 }
 
-/* 12) Intrus */
+/* 12) Intrus — OK */
 function startIntrus(){
   const cats = ["sport","art","culture","autre"];
   const baseCat = pick(cats)[0];
@@ -289,7 +310,7 @@ function intrusCheck(it,cat,base){
   recordResult(it,ok); startIntrus();
 }
 
-/* 13) Peek & Hide */
+/* 13) Peek & Hide — OK */
 function startPeek(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>👀 Peek & Hide</h2>
@@ -307,7 +328,7 @@ function peekCheck(it,fr){
   recordResult(it,ok); startPeek();
 }
 
-/* 14) Phrase Builder */
+/* 14) Phrase Builder — OK (pas QCM rigide) */
 function startPhrases(){
   const bank = shuffle([...DATA]).slice(6);
   const slots = shuffle(pick(DATA,3));
@@ -331,27 +352,31 @@ function phrasesCheck(targets){
   const it = vals[0]; recordResult(it, ok);
 }
 
-/* 15) Cible rapide */
+/* 15) Cible rapide — corrigé avec makeOptions */
 let targetTimer=null, targetTime=3000;
 function startTarget(){
   const q = pick(DATA)[0];
-  const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+  const opts = makeOptions(q.fr, 3);
   setHTML($("#content"), `<h2>🎯 Cible rapide</h2>
   <div class="progress"><div id="bar" class="bar"></div></div>
   <p>Vite ! <b>${q.it}</b> ${q.emoji}</p>
-  ${opts.map(o=>`<button class="btn" onclick="targetAnswer('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+  ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
   clearInterval(targetTimer);
   let t=0; targetTimer=setInterval(()=>{ t+=50; $("#bar").style.width = (t/targetTime*100)+"%"; if(t>=targetTime){ clearInterval(targetTimer); alert("⏰ Trop tard ! Réponse : "+q.fr); recordResult(q.it,false); startTarget(); } },50);
-}
-function targetAnswer(it,ans,correct){
-  clearInterval(targetTimer);
-  const ok = (ans===correct); alert(ok?"✅":"❌ "+correct);
-  recordResult(it,ok);
-  targetTime = Math.max(1200, targetTime-120);
-  startTarget();
+
+  document.querySelectorAll("#content .opt").forEach(btn=>{
+    btn.addEventListener("click", () => {
+      clearInterval(targetTimer);
+      const {it, ans, correct} = btn.dataset;
+      const ok = (ans===correct); alert(ok?"✅":"❌ "+correct);
+      recordResult(it,ok);
+      targetTime = Math.max(1200, targetTime-120);
+      startTarget();
+    });
+  });
 }
 
-/* 16) Anagrammes */
+/* 16) Anagrammes — OK */
 function startAnagrammes(){
   const single = DATA.filter(d=>!/\s/.test(d.it));
   const q = (single.length? pick(single)[0] : pick(DATA)[0]);
@@ -377,7 +402,7 @@ function anaCheck(target){
   recordResult(target, ok); startAnagrammes();
 }
 
-/* 17) Shadowing */
+/* 17) Shadowing — OK */
 function startShadow(){
   const q = pick(DATA)[0];
   setHTML($("#content"), `<h2>🎤 Shadowing</h2>
@@ -391,7 +416,7 @@ function shadowPlay(text){
   let i=0; const id=setInterval(()=>{ el.innerHTML = `<span class="hl">${text.slice(0,i)}</span>${text.slice(i)}`; i++; if(i>text.length){ clearInterval(id);} }, 80);
 }
 
-/* 18) Pièges */
+/* 18) Pièges — OK */
 function startPieges(){
   const sports = DATA.filter(d=>d.cat==="sport");
   const q = (sports.length? pick(sports)[0] : pick(DATA)[0]);
@@ -407,7 +432,7 @@ function piegesCheck(it,ans,correct){
   recordResult(it,ok); startPieges();
 }
 
-/* 19) Roue des jeux */
+/* 19) Roue des jeux — OK */
 function startWheel(){
   const list = ["quiz","vf","flash","drag","dictee","bingo","intrus","peek","phrases","target","anag","shadow","memory","chrono"];
   setHTML($("#content"), `<h2>🎡 Roue des jeux</h2><div class="wheel" id="wheel"></div><div class="wheel-pointer"></div>
@@ -438,7 +463,7 @@ function spinWheel(){
   setTimeout(()=>{ const id=list[stopAt]; const game = GAMES.find(g=>g.id===id); alert("🎯 "+game.label); game.run(); }, 3200);
 }
 
-/* 20) Révision du jour */
+/* 20) Révision du jour — corrigé avec makeOptions */
 function startDaily(){
   const items = [...DATA].sort((a,b)=>{
     const sa=STATS.items[a.it], sb=STATS.items[b.it];
@@ -448,27 +473,46 @@ function startDaily(){
   let i=0, score=0;
   function step(){
     if(i>=items.length){ alert("🗓️ Terminé : "+score+"/"+items.length); return; }
-    const q=items[i]; const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+    const q=items[i];
+    const opts = makeOptions(q.fr, 3);
     setHTML($("#content"), `<h2>🗓️ Révision du jour</h2>
       <p>${i+1}/5 — <b>${q.it}</b> ${q.emoji}</p>
-      ${opts.map(o=>`<button class="btn" onclick="(function(x){ const ok = x==='${q.fr.replace(/'/g,"\\'")}'; if(ok){score++;} recordResult('${q.it.replace(/'/g,"\\'")}',ok); i++; step(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+      ${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}`);
+    document.querySelectorAll("#content .opt").forEach(btn=>{
+      btn.addEventListener("click", () => {
+        const {it, ans, correct} = btn.dataset;
+        const ok = (ans===correct);
+        if(ok) score++;
+        recordResult(it, ok);
+        i++; step();
+      });
+    });
   }
   step();
 }
 
-/* 21) Duel local */
+/* 21) Duel local — corrigé avec makeOptions */
 function startDuel(){
   let turn=0, score=[0,0], total=10, count=0;
   function next(){
     if(count>=total){ alert(`🏁 Fin du duel\nJoueur 1: ${score[0]}\nJoueur 2: ${score[1]}`); return; }
     const p = (turn%2);
     const q = pick(DATA)[0];
-    const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+    const opts = makeOptions(q.fr, 3);
     setHTML($("#content"), `<h2>👥 Duel local</h2>
       <p>Tour du <b>Joueur ${p+1}</b> — ${count+1}/${total}</p>
       <p>Traduire : <b>${q.it}</b> ${q.emoji}</p>
-      <div>${opts.map(o=>`<button class="btn" onclick="(function(x){ const ok=(x==='${q.fr.replace(/'/g,"\\'")}'); if(ok) score[${p}]++; recordResult('${q.it.replace(/'/g,"\\'")}',ok); turn++; count++; next(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}</div>
+      <div>${opts.map(o=>`<button class="btn opt" data-it="${q.it}" data-ans="${o}" data-correct="${q.fr}">${o}</button>`).join(" ")}</div>
       <p class="muted small">Scores — J1: ${score[0]} | J2: ${score[1]}</p>`);
+    document.querySelectorAll("#content .opt").forEach(btn=>{
+      btn.addEventListener("click", () => {
+        const {it, ans, correct} = btn.dataset;
+        const ok = (ans===correct);
+        if(ok) score[p]++;
+        recordResult(it, ok);
+        turn++; count++; next();
+      });
+    });
   }
   next();
 }
