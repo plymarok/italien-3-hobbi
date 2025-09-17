@@ -1,221 +1,566 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Italien — Loisirs</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f9f9f9; }
-    h1 { color: #2c3e50; }
-    button { margin: 8px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-    .btn-lesson { background: #3498db; color: white; }
-    .btn-quiz { background: #27ae60; color: white; }
-    .btn-flash { background: #f39c12; color: white; }
-    .btn-audio { background: #9b59b6; color: white; }
-    .btn-vf { background: #e74c3c; color: white; }
-    .btn-drag { background: #16a085; color: white; }
-    .btn-auto { background: #2980b9; color: white; }
-    .btn-chrono { background: #d35400; color: white; }
-    .btn-memory { background: #8e44ad; color: white; }
-    .card { display: inline-block; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 10px; cursor: pointer; min-width: 150px; }
-    .dropzone { border: 2px dashed #aaa; padding: 10px; margin: 5px; border-radius: 8px; min-height: 40px; }
-    .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: auto; }
-    .memory-card { background: white; padding: 20px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Italien — Loisirs : Super Jeux de Mémo</title>
+<style>
+  :root{
+    --bg:#f8fafc; --ink:#1f2937; --muted:#6b7280; --card:#ffffff; --brand:#2563eb;
+    --ok:#22c55e; --bad:#ef4444; --accent:#8b5cf6;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:10}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  h1{margin:0;font-size:1.4rem}
+  .hud{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .badge{background:#eef2ff;color:#3730a3;padding:6px 10px;border-radius:999px;font-weight:600}
+  .stars{letter-spacing:2px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .btn{border:0;border-radius:10px;padding:10px 14px;background:#e5e7eb;cursor:pointer;font-weight:600}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ok{background:var(--ok);color:#fff}
+  .btn.bad{background:var(--bad);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid #e5e7eb}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid #e5e7eb;border-radius:14px;padding:16px}
+  .center{text-align:center}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#f1f5f9;color:#0f172a}
+  .list{list-style:none;padding:0;margin:0}
+  .list li{padding:6px 8px;border-bottom:1px dashed #e5e7eb}
+  .list li:last-child{border-bottom:0}
+  .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:10px;margin:6px 0;min-height:44px;display:flex;align-items:center;justify-content:center}
+  .drag{background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:10px;margin:6px;cursor:grab;display:inline-block}
+  .memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:560px;margin:16px auto}
+  .memory-card{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:20px;cursor:pointer;text-align:center;user-select:none}
+  .bingo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:600px;margin:0 auto}
+  .bingo-cell{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:14px;cursor:pointer;text-align:center}
+  .bingo-cell.mark{background:#d1fae5;border-color:#10b981}
+  .bingo-cell.call{outline:2px solid #60a5fa}
+  .progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+  .bar{height:100%;width:0;background:var(--brand);transition:width .2s}
+  .wheel{width:280px;height:280px;border-radius:50%;border:10px solid #e5e7eb;margin:10px auto;position:relative;overflow:hidden}
+  .wheel-slice{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-origin:50% 50%;font-size:.9rem;color:#fff}
+  .wheel-pointer{width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:18px solid var(--bad);margin:0 auto 6px}
+  .muted{color:var(--muted)}
+  input[type=text]{padding:10px;border:1px solid #cbd5e1;border-radius:10px;width:min(520px,100%)}
+  select{padding:10px;border:1px solid #cbd5e1;border-radius:10px}
+  .ghost-karaoke{font-size:1.4rem;letter-spacing:.02em}
+  .hl{background:#fef3c7}
+  .small{font-size:.92rem}
+  .right{float:right}
+  @media (max-width:640px){.memory-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
 </head>
 <body>
-  <h1>📘 Révision Italien — Loisirs</h1>
+<header>
+  <div class="wrap">
+    <h1>📘 Italien — Loisirs : mémo & jeux</h1>
+    <div class="hud">
+      <span id="points" class="badge">Points : 0</span>
+      <span id="streak" class="badge stars">Streak ★☆☆☆☆</span>
+      <span id="best" class="badge">Best : 0</span>
+      <button class="btn ghost right" onclick="resetProgress()">Réinitialiser les progrès</button>
+    </div>
+    <div class="toolbar" id="toolbar">
+      <!-- Boutons de jeux injectés depuis JS -->
+    </div>
+  </div>
+</header>
 
-  <!-- Boutons -->
-  <button class="btn-lesson" onclick="showLesson()">📖 Leçon</button>
-  <button class="btn-quiz" onclick="startQuiz()">📝 Quiz</button>
-  <button class="btn-flash" onclick="startFlashcards()">🎴 Flashcards</button>
-  <button class="btn-audio" onclick="startAudio()">🔊 Audio</button>
-  <button class="btn-vf" onclick="startVF()">🎲 Vrai ou Faux</button>
-  <button class="btn-drag" onclick="startDragDrop()">🧩 Associer</button>
-  <button class="btn-auto" onclick="startAuto()">⏱️ Révision minute</button>
-  <button class="btn-chrono" onclick="startChrono()">🏆 Challenge chrono</button>
-  <button class="btn-memory" onclick="startMemory()">🎮 Memory</button>
+<main class="wrap">
+  <div id="content" class="card"></div>
+</main>
 
-  <div id="content"></div>
+<script>
+/* =======================
+   Données & catégories
+======================= */
+const DATA = [
+  {emoji:"🧘", it:"Fare yoga", fr:"faire du yoga", cat:"sport"},
+  {emoji:"🎣", it:"Pescare", fr:"pêcher", cat:"sport"},
+  {emoji:"⚽", it:"Giocare a calcio", fr:"jouer au foot", cat:"sport"},
+  {emoji:"🚲", it:"Andare in bici", fr:"aller à vélo", cat:"sport"},
+  {emoji:"🏀", it:"Giocare a basket", fr:"jouer au basket", cat:"sport"},
+  {emoji:"🏐", it:"Giocare a pallavolo", fr:"jouer au volley", cat:"sport"},
+  {emoji:"🏏", it:"Giocare a cricket", fr:"jouer au cricket", cat:"sport"},
+  {emoji:"🎸", it:"Suonare la chitarra", fr:"jouer de la guitare", cat:"art"},
+  {emoji:"🎤", it:"Cantare", fr:"chanter", cat:"art"},
+  {emoji:"🎨", it:"Dipingere", fr:"peindre", cat:"art"},
+  {emoji:"🎧", it:"Ascoltare la musica", fr:"écouter de la musique", cat:"art"},
+  {emoji:"🎭", it:"Andare a teatro", fr:"aller au théâtre", cat:"culture"},
+  {emoji:"🎬", it:"Andare al cinema", fr:"aller au cinéma", cat:"culture"},
+  {emoji:"📖", it:"Leggere", fr:"lire", cat:"culture"},
+  {emoji:"🎮", it:"Giocare ai videogiochi", fr:"jouer aux jeux vidéo", cat:"culture"},
+  {emoji:"✈️", it:"Viaggiare", fr:"voyager", cat:"autre"}
+];
 
-  <script>
-    const data = [
-      {emoji:"🧘", it:"Fare yoga", fr:"faire du yoga"},
-      {emoji:"🎣", it:"Pescare", fr:"pêcher"},
-      {emoji:"⚽", it:"Giocare a calcio", fr:"jouer au foot"},
-      {emoji:"🚲", it:"Andare in bici", fr:"aller à vélo"},
-      {emoji:"🏀", it:"Giocare a basket", fr:"jouer au basket"},
-      {emoji:"🏐", it:"Giocare a pallavolo", fr:"jouer au volley"},
-      {emoji:"🏏", it:"Giocare a cricket", fr:"jouer au cricket"},
-      {emoji:"🎸", it:"Suonare la chitarra", fr:"jouer de la guitare"},
-      {emoji:"🎤", it:"Cantare", fr:"chanter"},
-      {emoji:"🎨", it:"Dipingere", fr:"peindre"},
-      {emoji:"🎧", it:"Ascoltare la musica", fr:"écouter de la musique"},
-      {emoji:"🎭", it:"Andare a teatro", fr:"aller au théâtre"},
-      {emoji:"🎬", it:"Andare al cinema", fr:"aller au cinéma"},
-      {emoji:"📖", it:"Leggere", fr:"lire"},
-      {emoji:"🎮", it:"Giocare ai videogiochi", fr:"jouer aux jeux vidéo"},
-      {emoji:"✈️", it:"Viaggiare", fr:"voyager"}
-    ];
+/* =======================
+   Utilitaires
+======================= */
+const $ = sel => document.querySelector(sel);
+const setHTML = (el, html) => el.innerHTML = html;
+const shuffle = arr => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const pick = (arr,n=1)=>shuffle([...arr]).slice(0,n);
+const norm = s => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+const byIT = it => DATA.find(x=>x.it===it);
 
-    // 📖 Leçon
-    function showLesson() {
-      let html = "<h2>📖 Leçon</h2><ul style='list-style:none'>";
-      data.forEach(item => html += `<li>${item.emoji} ${item.it} = ${item.fr}</li>`);
-      html += "</ul>";
-      document.getElementById("content").innerHTML = html;
-    }
+/* =======================
+   Progression (LocalStorage)
+======================= */
+const KEY_STATS="it_memo_stats_v1";
+let STATS = loadStats();
 
-    // 📝 Quiz
-    function startQuiz() {
-      let q = data[Math.floor(Math.random()*data.length)];
-      let options = [q.fr];
-      while(options.length<3) {
-        let r = data[Math.floor(Math.random()*data.length)].fr;
-        if(!options.includes(r)) options.push(r);
-      }
-      options.sort(()=>Math.random()-0.5);
-      let html = `<h2>📝 Quiz</h2><p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>`;
-      options.forEach(opt=> html += `<button onclick="checkQuiz('${opt}','${q.fr}')">${opt}</button><br>`);
-      document.getElementById("content").innerHTML = html;
-    }
-    function checkQuiz(ans,correct) {
-      alert(ans===correct ? "✅ Bravo !" : "❌ Mauvaise réponse. C'était : " + correct);
-      startQuiz();
-    }
+function loadStats(){
+  const raw = localStorage.getItem(KEY_STATS);
+  if(raw){ try{ return JSON.parse(raw);}catch(e){} }
+  const s={points:0, streak:0, best:0, items:{}, lastDaily:null};
+  DATA.forEach(d=>s.items[d.it]={ok:0, ko:0, streak:0, best:0});
+  return s;
+}
+function saveStats(){ localStorage.setItem(KEY_STATS, JSON.stringify(STATS)); renderHUD(); }
+function recordResult(it, ok){
+  const item = STATS.items[it]; if(!item) return;
+  if(ok){ item.ok++; item.streak++; item.best=Math.max(item.best,item.streak); STATS.points++; STATS.streak++; STATS.best=Math.max(STATS.best, STATS.points); }
+  else { item.ko++; item.streak=0; STATS.streak=0; }
+  saveStats();
+}
+function renderHUD(){
+  $("#points").textContent = "Points : " + STATS.points;
+  $("#best").textContent = "Best : " + STATS.best;
+  const stars = Math.min(5, Math.floor(STATS.streak/5)+1);
+  $("#streak").textContent = "Streak " + "★".repeat(stars) + "☆".repeat(5-stars);
+}
+function resetProgress(){
+  if(!confirm("Réinitialiser tous les points, streaks et statistiques ?")) return;
+  localStorage.removeItem(KEY_STATS);
+  STATS = loadStats(); saveStats();
+}
 
-    // 🎴 Flashcards
-    function startFlashcards() {
-      let html = "<h2>🎴 Flashcards</h2>";
-      data.forEach(item=>{
-        html += `<div class="card" onclick="this.innerText=this.innerText.includes('=')?'${item.emoji} ${item.it}':'${item.emoji} ${item.it} = ${item.fr}'">${item.emoji} ${item.it}</div>`;
-      });
-      document.getElementById("content").innerHTML = html;
-    }
+/* =======================
+   Barre d’outils (jeux)
+======================= */
+const GAMES = [
+  {id:"lesson", label:"📖 Leçon", run:showLesson, cls:""},
+  {id:"quiz", label:"📝 Quiz", run:startQuiz, cls:""},
+  {id:"flash", label:"🎴 Flashcards", run:startFlashcards, cls:""},
+  {id:"audio", label:"🔊 Audio", run:startAudio, cls:""},
+  {id:"vf", label:"🎲 Vrai/Faux", run:startVF, cls:""},
+  {id:"drag", label:"🧩 Associer", run:startDragDrop, cls:""},
+  {id:"auto", label:"⏱️ Révision minute", run:startAuto, cls:""},
+  {id:"chrono", label:"🏆 Challenge chrono", run:startChrono, cls:""},
+  {id:"memory", label:"🎮 Memory", run:startMemory, cls:""},
+  {id:"dictee", label:"⌨️ Dictée inversée", run:startDictee, cls:""},
+  {id:"bingo", label:"🔢 Bingo 4×4", run:startBingo, cls:""},
+  {id:"intrus", label:"🧠 Intrus", run:startIntrus, cls:""},
+  {id:"peek", label:"👀 Peek & Hide", run:startPeek, cls:""},
+  {id:"phrases", label:"🧱 Phrase Builder", run:startPhrases, cls:""},
+  {id:"target", label:"🎯 Cible rapide", run:startTarget, cls:""},
+  {id:"anag", label:"🔤 Anagrammes", run:startAnagrammes, cls:""},
+  {id:"shadow", label:"🎤 Shadowing", run:startShadow, cls:""},
+  {id:"pieges", label:"⚠️ Pièges", run:startPieges, cls:""},
+  {id:"wheel", label:"🎡 Roue", run:startWheel, cls:""},
+  {id:"daily", label:"🗓️ Révision du jour", run:startDaily, cls:""},
+  {id:"duel", label:"👥 Duel local", run:startDuel, cls:""}
+];
+function renderToolbar(){
+  setHTML($("#toolbar"),
+    GAMES.map(g=>`<button class="btn" onclick="${g.run.name}()">${g.label}</button>`).join("")
+  );
+}
 
-    // 🔊 Audio
-    function startAudio() {
-      let html = "<h2>🔊 Écoute et répète</h2>";
-      data.forEach(item=> html += `<button onclick="speak('${item.it}')">${item.emoji} ${item.it}</button><br>`);
-      document.getElementById("content").innerHTML = html;
-    }
-    function speak(text) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "it-IT";
-      speechSynthesis.speak(u);
-    }
+/* =======================
+   Jeux — versions compactes
+======================= */
 
-    // 🎲 Vrai ou Faux
-    function startVF() {
-      let q = data[Math.floor(Math.random()*data.length)];
-      let r = data[Math.floor(Math.random()*data.length)];
-      let html = `<h2>🎲 Vrai ou Faux</h2><p>${q.it} ${q.emoji} = ${r.fr}</p>`;
-      html += `<button onclick="checkVF(${q.fr===r.fr},true)">Vrai</button>`;
-      html += `<button onclick="checkVF(${q.fr===r.fr},false)">Faux</button>`;
-      document.getElementById("content").innerHTML = html;
-    }
-    function checkVF(correct,answer) {
-      alert(answer===correct ? "✅ Bravo !" : "❌ Mauvaise réponse !");
-      startVF();
-    }
+/* 1) Leçon */
+function showLesson(){
+  const list = DATA.map(d=>`<li>${d.emoji} <b>${d.it}</b> = ${d.fr} <span class="pill">${d.cat}</span></li>`).join("");
+  setHTML($("#content"), `<h2>📖 Leçon</h2><ul class="list">${list}</ul>`);
+}
 
-    // 🧩 Drag & Drop
-    function startDragDrop() {
-      let shuffled = [...data].sort(()=>Math.random()-0.5);
-      let html = "<h2>🧩 Associer</h2><p>Glisse le mot italien sur la bonne traduction :</p>";
-      html += "<div style='display:flex;flex-wrap:wrap;justify-content:center'>";
-      shuffled.forEach((item,i)=>{
-        html += `<div draggable="true" ondragstart="drag(event,'${item.fr}')" class="card">${item.emoji} ${item.it}</div>`;
-      });
-      html += "</div><hr>";
-      data.forEach(item=>{
-        html += `<div class="dropzone" ondrop="drop(event,'${item.fr}')" ondragover="allowDrop(event)">${item.fr}</div>`;
-      });
-      document.getElementById("content").innerHTML = html;
-    }
-    function allowDrop(ev){ev.preventDefault();}
-    function drag(ev,text){ev.dataTransfer.setData("text",text);}
-    function drop(ev,correct){
-      ev.preventDefault();
-      let dataText = ev.dataTransfer.getData("text");
-      if(dataText===correct){ ev.target.style.background="lightgreen"; }
-      else { ev.target.style.background="salmon"; }
-    }
+/* 2) Quiz (QCM) */
+function startQuiz(){
+  const q = pick(DATA)[0];
+  const opts = shuffle([q.fr, ...pick(DATA,5).map(x=>x.fr)]).slice(0,3);
+  setHTML($("#content"), `
+    <h2>📝 Quiz</h2>
+    <p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
+    ${opts.map(o=>`<button class="btn" onclick="quizCheck('${q.it}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}
+  `);
+}
+function quizCheck(it,ans,correct){
+  const ok = (ans===correct);
+  alert(ok ? "✅ Bravo !" : "❌ Mauvaise réponse.\n→ " + correct);
+  recordResult(it, ok);
+  startQuiz();
+}
 
-    // ⏱️ Révision minute
-    let autoIndex=0, autoTimer=null;
-    function startAuto(){
-      autoIndex=0;
-      if(autoTimer) clearInterval(autoTimer);
-      document.getElementById("content").innerHTML="<h2>⏱️ Révision minute</h2><div id='autoBox'></div>";
-      autoTimer=setInterval(()=>{
-        let item=data[autoIndex];
-        document.getElementById("autoBox").innerText=`${item.emoji} ${item.it} = ${item.fr}`;
-        autoIndex=(autoIndex+1)%data.length;
-      },3000);
-    }
+/* 3) Flashcards */
+function startFlashcards(){
+  setHTML($("#content"), `<h2>🎴 Flashcards</h2>
+    <div class="grid">${DATA.map(d=>`
+      <div class="card center" onclick="this.dataset.flip^=1; this.innerHTML = (this.dataset.flip%2==1)?'${d.emoji} <b>${d.it}</b><br><span class=muted>cliquer</span>':'${d.emoji} <b>${d.it}</b><br>${d.fr}'">
+        ${d.emoji} <b>${d.it}</b><br><span class="muted">cliquer</span>
+      </div>`).join("")}
+    </div>`);
+}
 
-    // 🏆 Challenge chrono
-    let chronoScore=0, chronoCount=0, chronoTimer=null;
-    function startChrono(){
-      chronoScore=0; chronoCount=0;
-      document.getElementById("content").innerHTML="<h2>🏆 Challenge chrono</h2><div id='chronoBox'></div>";
-      chronoNext();
-    }
-    function chronoNext(){
-      if(chronoCount>=10){ alert("Score final : "+chronoScore+"/10"); return; }
-      chronoCount++;
-      let q=data[Math.floor(Math.random()*data.length)];
-      let options=[q.fr];
-      while(options.length<3){
-        let r=data[Math.floor(Math.random()*data.length)].fr;
-        if(!options.includes(r)) options.push(r);
-      }
-      options.sort(()=>Math.random()-0.5);
-      let html=`<p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>`;
-      options.forEach(opt=> html+=`<button onclick="chronoCheck('${opt}','${q.fr}')">${opt}</button><br>`);
-      document.getElementById("chronoBox").innerHTML=html;
-    }
-    function chronoCheck(ans,correct){
-      if(ans===correct) chronoScore++;
-      chronoNext();
-    }
+/* 4) Audio */
+function startAudio(){
+  setHTML($("#content"), `<h2>🔊 Écoute et répète</h2>
+  <p class="muted small">Cliquer pour entendre l’italien (voix du navigateur).</p>
+  ${DATA.map(d=>`<button class="btn" onclick="speak('${d.it.replace(/'/g,"\\'")}')">${d.emoji} ${d.it}</button>`).join(" ")}`);
+}
+function speak(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang="it-IT"; speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 
-    // 🎮 Memory
-    let memory=[], flipped=[], found=0;
-    function startMemory(){
-      memory=[];
-      data.forEach(item=>{
-        memory.push({text:item.it, pair:item.fr});
-        memory.push({text:item.fr, pair:item.it});
-      });
-      memory.sort(()=>Math.random()-0.5);
-      let html="<h2>🎮 Memory</h2><div class='memory-grid'>";
-      memory.forEach((c,i)=> html+=`<div class='memory-card' id='m${i}' onclick='flip(${i})'>?</div>`);
-      html+="</div>";
-      document.getElementById("content").innerHTML=html;
-    }
-    function flip(i){
-      let card=memory[i], div=document.getElementById("m"+i);
-      if(flipped.length<2 && div.innerText==='?'){
-        div.innerText=card.text;
-        flipped.push({i,text:card.text,pair:card.pair});
-        if(flipped.length===2){
-          setTimeout(()=>{
-            if((flipped[0].text===flipped[1].pair)){
-              document.getElementById("m"+flipped[0].i).style.background="lightgreen";
-              document.getElementById("m"+flipped[1].i).style.background="lightgreen";
-              found++;
-              if(found===data.length) alert("🎉 Bravo ! Tu as gagné le memory !");
-            } else {
-              document.getElementById("m"+flipped[0].i).innerText='?';
-              document.getElementById("m"+flipped[1].i).innerText='?';
-            }
-            flipped=[];
-          },800);
+/* 5) Vrai/Faux */
+function startVF(){
+  const q = pick(DATA)[0], r = pick(DATA)[0];
+  const isTrue = (q.fr===r.fr);
+  setHTML($("#content"), `<h2>🎲 Vrai ou Faux</h2>
+    <p>${q.it} ${q.emoji} = ${r.fr}</p>
+    <button class="btn ok" onclick="vfCheck('${q.it}',${isTrue},true)">Vrai</button>
+    <button class="btn bad" onclick="vfCheck('${q.it}',${isTrue},false)">Faux</button>`);
+}
+function vfCheck(it,truth,ans){
+  const ok = (truth===ans);
+  alert(ok?"✅ Bravo !":"❌ Mauvais choix.");
+  recordResult(it,ok); startVF();
+}
+
+/* 6) Drag & Drop */
+function startDragDrop(){
+  const left = shuffle([...DATA]);
+  const right = shuffle([...DATA]);
+  setHTML($("#content"), `<h2>🧩 Associer</h2>
+  <div class="grid">
+    <div class="card"><h3>Italien</h3>${left.map(d=>`<span class="drag" draggable="true" ondragstart="drag(event,'${d.fr.replace(/'/g,"\\'")}','${d.it.replace(/'/g,"\\'")}')">${d.emoji} ${d.it}</span>`).join("")}</div>
+    <div class="card"><h3>Français</h3>${right.map(d=>`<div class="dropzone" ondragover="allowDrop(event)" ondrop="drop(event,'${d.fr.replace(/'/g,"\\'")}')">${d.fr}</div>`).join("")}</div>
+  </div>`);
+}
+function allowDrop(e){ e.preventDefault(); }
+function drag(e, fr, it){ e.dataTransfer.setData("text/plain", JSON.stringify({fr,it})); }
+function drop(e, fr){
+  e.preventDefault();
+  const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+  const ok = (data.fr===fr);
+  e.target.style.background = ok ? "#d1fae5" : "#fee2e2";
+  recordResult(data.it, ok);
+}
+
+/* 7) Révision minute */
+let autoTimer=null, autoIndex=0;
+function startAuto(){
+  clearInterval(autoTimer); autoIndex=0;
+  setHTML($("#content"), `<h2>⏱️ Révision minute</h2><div id="autoBox" class="center" style="font-size:1.4rem;padding:10px"></div>`);
+  autoTimer = setInterval(()=>{
+    const d = DATA[autoIndex];
+    $("#autoBox").innerHTML = `${d.emoji} <b>${d.it}</b><br>${d.fr}`;
+    autoIndex = (autoIndex+1)%DATA.length;
+  }, 3000);
+}
+
+/* 8) Challenge chrono (10 QCM rapides) */
+let chronoScore=0, chronoCount=0;
+function startChrono(){ chronoScore=0; chronoCount=0; chronoNext(); }
+function chronoNext(){
+  if(chronoCount>=10){ alert("Score final : "+chronoScore+"/10"); return; }
+  chronoCount++;
+  const q = pick(DATA)[0];
+  const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+  setHTML($("#content"), `<h2>🏆 Challenge chrono</h2>
+  <p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>
+  ${opts.map(o=>`<button class="btn" onclick="(function(x){ if(x==='${q.fr.replace(/'/g,"\\'")}'){chronoScore++;recordResult('${q.it.replace(/'/g,"\\'")}',true);} else {recordResult('${q.it.replace(/'/g,"\\'")}',false);} chronoNext(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+}
+
+/* 9) Memory */
+let mem=[], memFlipped=[], memFound=0;
+function startMemory(){
+  mem=[]; memFlipped=[]; memFound=0;
+  DATA.forEach(d=>{ mem.push({text:d.it, pair:d.fr}); mem.push({text:d.fr, pair:d.it}); });
+  mem = shuffle(mem);
+  setHTML($("#content"), `<h2>🎮 Memory</h2><div class="memory-grid">${mem.map((c,i)=>`<div class="memory-card" id="m${i}" onclick="flip(${i})">?</div>`).join("")}</div>`);
+}
+function flip(i){
+  const card = mem[i], div = $("#m"+i);
+  if(memFlipped.length<2 && div.textContent==='?'){
+    div.textContent = card.text; memFlipped.push({i, ...card});
+    if(memFlipped.length===2){
+      setTimeout(()=>{
+        const [a,b]=memFlipped;
+        if(a.text===b.pair){ $("#m"+a.i).style.background="#d1fae5"; $("#m"+b.i).style.background="#d1fae5"; memFound++;
+          const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
+          if(it) recordResult(it,true);
+          if(memFound===DATA.length) alert("🎉 Bravo ! Memory terminé.");
+        } else {
+          $("#m"+a.i).textContent='?'; $("#m"+b.i).textContent='?';
+          const it = (DATA.find(d=>d.it===a.text)||DATA.find(d=>d.it===b.text))?.it;
+          if(it) recordResult(it,false);
         }
-      }
+        memFlipped=[];
+      }, 650);
     }
-  </script>
+  }
+}
+
+/* 10) Dictée inversée (FR -> IT à taper) */
+function startDictee(){
+  const q = pick(DATA)[0];
+  setHTML($("#content"), `<h2>⌨️ Dictée inversée</h2>
+    <p>Écris en italien : <b>${q.fr}</b> ${q.emoji}</p>
+    <input id="dicteeIn" type="text" placeholder="Tape l’italien ici" onkeydown="if(event.key==='Enter') dicteeCheck('${q.it.replace(/'/g,"\\'")}')" />
+    <div style="margin-top:8px">
+      <button class="btn primary" onclick="dicteeCheck('${q.it.replace(/'/g,"\\'")}')">Vérifier</button>
+      <button class="btn" onclick="startDictee()">Nouveau</button>
+    </div>`);
+  $("#dicteeIn").focus();
+}
+function dicteeCheck(it){
+  const val = norm($("#dicteeIn").value);
+  const ok = (val===norm(it));
+  alert(ok?"✅ Juste !":"❌ Attendu : "+it);
+  recordResult(it,ok); startDictee();
+}
+
+/* 11) Bingo 4×4 (appel de traductions) */
+let bingoCall=null;
+function startBingo(){
+  const gridItems = shuffle([...DATA]);
+  bingoCall = pick(DATA)[0];
+  setHTML($("#content"), `<h2>🔢 Bingo 4×4</h2>
+    <p>Appel : <b id="bingoCall">${bingoCall.fr}</b></p>
+    <div class="bingo-grid">
+      ${gridItems.map(d=>`<div class="bingo-cell" onclick="bingoClick(this,'${d.it.replace(/'/g,"\\'")}','${d.fr.replace(/'/g,"\\'")}')">${d.emoji} ${d.it}</div>`).join("")}
+    </div>
+    <div style="margin-top:10px"><button class="btn" onclick="bingoNext()">🔔 Nouvel appel</button></div>
+  `);
+}
+function bingoClick(cell,it,fr){
+  if(fr===$("#bingoCall").textContent){ cell.classList.add("mark"); recordResult(it,true); bingoNext(); checkBingoWin(); }
+  else { cell.classList.add("call"); setTimeout(()=>cell.classList.remove("call"),500); recordResult(it,false); }
+}
+function bingoNext(){ bingoCall = pick(DATA)[0]; $("#bingoCall").textContent = bingoCall.fr; }
+function checkBingoWin(){
+  const cells=[...document.querySelectorAll(".bingo-cell")];
+  const idx = i=>cells[i].classList.contains("mark")?1:0;
+  const lines=[
+    [0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],
+    [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],
+    [0,5,10,15],[3,6,9,12]
+  ];
+  for(const l of lines){ if(l.map(idx).reduce((a,b)=>a+b,0)===4){ alert("🟩 BINGO !"); break; } }
+}
+
+/* 12) Intrus (Odd-One-Out) */
+function startIntrus(){
+  const baseCat = pick(["sport","art","culture","autre"])[0];
+  const same = pick(DATA.filter(d=>d.cat===baseCat),3);
+  const diff = pick(DATA.filter(d=>d.cat!==baseCat),1);
+  const set = shuffle([...same, ...diff]);
+  setHTML($("#content"), `<h2>🧠 Trouve l’intrus</h2>
+    <p>Parmi ces 4, un seul n’est pas de la même catégorie.</p>
+    ${set.map(d=>`<button class="btn" onclick="intrusCheck('${d.it.replace(/'/g,"\\'")}','${d.cat}','${baseCat}')">${d.emoji} ${d.it}</button>`).join(" ")}`);
+}
+function intrusCheck(it,cat,base){
+  const ok = (cat!==base);
+  alert(ok?"✅ Intrus trouvé !":"❌ Non, celui-ci est de la même catégorie.");
+  recordResult(it,ok); startIntrus();
+}
+
+/* 13) Peek & Hide */
+function startPeek(){
+  const q = pick(DATA)[0];
+  setHTML($("#content"), `<h2>👀 Peek & Hide</h2>
+    <p>Regarde vite, puis traduis en français.</p>
+    <div id="peekWord" style="font-size:1.4rem;margin:6px 0">${q.emoji} <b>${q.it}</b></div>
+    <input id="peekIn" type="text" placeholder="Traduction FR" onkeydown="if(event.key==='Enter') peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')" />
+    <div style="margin-top:8px"><button class="btn primary" onclick="peekCheck('${q.it.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">Vérifier</button></div>
+  `);
+  setTimeout(()=>$("#peekWord").innerHTML = "••••••••••••", 1200);
+  $("#peekIn").focus();
+}
+function peekCheck(it,fr){
+  const ok = norm($("#peekIn").value)===norm(fr);
+  alert(ok?"✅ Bravo !":"❌ Réponse : "+fr);
+  recordResult(it,ok); startPeek();
+}
+
+/* 14) Phrase Builder (compléter) */
+function startPhrases(){
+  const bank = shuffle([...DATA]).slice(6);
+  const slots = shuffle(pick(DATA,3));
+  setHTML($("#content"), `<h2>🧱 Phrase Builder</h2>
+    <p>Complète les phrases avec la bonne activité (menu déroulant).</p>
+    <div class="card">
+      <p>Mi piace <select id="p1">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
+      <p>La sera, <select id="p2">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
+      <p>Domani voglio <select id="p3">${bank.map(d=>`<option value="${d.it}">${d.it}</option>`).join("")}</select>.</p>
+      <button class="btn primary" onclick="phrasesCheck(['${slots[0].it.replace(/'/g,"\\'")}','${slots[1].it.replace(/'/g,"\\'")}','${slots[2].it.replace(/'/g,"\\'")}'])">Vérifier (solutions cachées)</button>
+      <p class="muted small">Astuce: peu importe l’ordre, tu dois choisir 3 actions plausibles. Une vérification souple te donne le point si 2/3 sont cohérentes.</p>
+    </div>`);
+}
+function phrasesCheck(targets){
+  const vals = [$("#p1").value,$("#p2").value,$("#p3").value];
+  let okCount = 0; vals.forEach(v=>{ if(targets.includes(v)) okCount++; });
+  const ok = okCount>=2;
+  alert((ok? "✅ Bien joué ("+okCount+"/3)": "❌ Seulement "+okCount+"/3"));
+  const it = vals[0]; recordResult(it, ok); // attribut un item arbitraire
+}
+
+/* 15) Cible rapide (réflexe + timer) */
+let targetTimer=null, targetTime=3000;
+function startTarget(){
+  const q = pick(DATA)[0];
+  const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+  setHTML($("#content"), `<h2>🎯 Cible rapide</h2>
+  <div class="progress"><div id="bar" class="bar"></div></div>
+  <p>Vite ! <b>${q.it}</b> ${q.emoji}</p>
+  ${opts.map(o=>`<button class="btn" onclick="targetAnswer('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+  clearInterval(targetTimer);
+  let t=0; targetTimer=setInterval(()=>{ t+=50; $("#bar").style.width = (t/targetTime*100)+"%"; if(t>=targetTime){ clearInterval(targetTimer); alert("⏰ Trop tard ! Réponse : "+q.fr); recordResult(q.it,false); startTarget(); } },50);
+}
+function targetAnswer(it,ans,correct){
+  clearInterval(targetTimer);
+  const ok = (ans===correct); alert(ok?"✅":"❌ "+correct);
+  recordResult(it,ok);
+  // accélère légèrement
+  targetTime = Math.max(1200, targetTime-120);
+  startTarget();
+}
+
+/* 16) Anagrammes (recompose le mot italien) */
+function startAnagrammes(){
+  const q = pick(DATA.filter(d=>!/\s/.test(d.it)))[0] || pick(DATA)[0];
+  const letters = shuffle(q.it.replace(/\s+/g,'').split(''));
+  setHTML($("#content"), `<h2>🔤 Anagrammes</h2>
+    <p>Recompose : <b>${q.it.length}</b> lettres (${q.emoji})</p>
+    <div id="anaOut" class="pill" style="min-height:38px;display:inline-block;padding:8px 12px"></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(42px,1fr));max-width:480px">
+      ${letters.map((c,i)=>`<button class="btn" id="l${i}" onclick="anaPick('${c}','l${i}')">${c}</button>`).join("")}
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn primary" onclick="anaCheck('${q.it.replace(/'/g,"\\'")}')">Vérifier</button>
+      <button class="btn" onclick="startAnagrammes()">Recommencer</button>
+    </div>`);
+}
+function anaPick(c,id){
+  const out = $("#anaOut"); out.textContent += c; $("#"+id).disabled=true;
+}
+function anaCheck(target){
+  const val = $("#anaOut").textContent;
+  const ok = (norm(val)===norm(target.replace(/\s+/g,'')));
+  alert(ok?"✅ Bravo !":"❌ Réponse : "+target);
+  recordResult(target, ok); startAnagrammes();
+}
+
+/* 17) Shadowing (karaoké) */
+function startShadow(){
+  const q = pick(DATA)[0];
+  setHTML($("#content"), `<h2>🎤 Shadowing</h2>
+    <p class="muted small">Lis à voix haute en même temps que la voix.</p>
+    <div id="kara" class="ghost-karaoke">${q.emoji} ${q.it}</div>
+    <div style="margin-top:8px"><button class="btn primary" onclick="shadowPlay('${q.it.replace(/'/g,"\\'")}')">▶️ Écouter</button></div>`);
+}
+function shadowPlay(text){
+  speak(text);
+  const el = $("#kara"); el.innerHTML = "";
+  let i=0; const id=setInterval(()=>{ el.innerHTML = `<span class="hl">${text.slice(0,i)}</span>${text.slice(i)}`; i++; if(i>text.length){ clearInterval(id);} }, 80);
+}
+
+/* 18) Pièges (deux options proches) */
+function startPieges(){
+  const q = pick(DATA.filter(d=>d.cat==="sport"))[0] || pick(DATA)[0];
+  // option piégeuse : une autre traduction de sport
+  const trap = pick(DATA.filter(d=>d.cat===q.cat && d.fr!==q.fr))[0]?.fr || pick(DATA)[0].fr;
+  const opts = shuffle([q.fr, trap]);
+  setHTML($("#content"), `<h2>⚠️ Pièges</h2>
+    <p>Choisis la traduction EXACTE de <b>${q.it}</b> ${q.emoji}</p>
+    ${opts.map(o=>`<button class="btn" onclick="piegesCheck('${q.it.replace(/'/g,"\\'")}','${o.replace(/'/g,"\\'")}','${q.fr.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+}
+function piegesCheck(it,ans,correct){
+  const ok = (ans===correct);
+  alert(ok?"✅ Précision !":"❌ C’était : "+correct);
+  recordResult(it,ok); startPieges();
+}
+
+/* 19) Roue des jeux */
+function startWheel(){
+  const list = ["quiz","vf","flash","drag","dictee","bingo","intrus","peek","phrases","target","anag","shadow","memory","chrono"];
+  setHTML($("#content"), `<h2>🎡 Roue des jeux</h2><div class="wheel" id="wheel"></div><div class="wheel-pointer"></div>
+    <button class="btn primary" onclick="spinWheel()">Spinner</button>`);
+  const wheel = $("#wheel");
+  const n=list.length;
+  list.forEach((id,idx)=>{
+    const slice = document.createElement("div");
+    const angle = 360/n;
+    slice.className="wheel-slice";
+    slice.style.transform = `rotate(${idx*angle}deg)`;
+    slice.style.background = `hsl(${(idx*360/n)|0} 80% 55%)`;
+    slice.innerHTML = `<div style="transform:rotate(${-idx*angle}deg)">${GAMES.find(g=>g.id===id).label}</div>`;
+    wheel.appendChild(slice);
+  });
+  wheel.dataset.games = JSON.stringify(list);
+}
+function spinWheel(){
+  const wheel = $("#wheel"); if(!wheel) return;
+  const list = JSON.parse(wheel.dataset.games);
+  const n=list.length;
+  const turns = 6*360;
+  const stopAt = Math.floor(Math.random()*n);
+  const angle = 360/n;
+  const final = turns + stopAt*angle + angle/2;
+  wheel.style.transition="transform 3s cubic-bezier(.25,.9,.25,1)";
+  wheel.style.transform=`rotate(${final}deg)`;
+  setTimeout(()=>{ const id=list[stopAt]; const game = GAMES.find(g=>g.id===id); alert("🎯 "+game.label); game.run(); }, 3200);
+}
+
+/* 20) Révision du jour (spaced / faibles) */
+function startDaily(){
+  // score de difficulté = ko - ok (plus c'est grand, plus faible)
+  const items = [...DATA].sort((a,b)=>{
+    const sa=STATS.items[a.it], sb=STATS.items[b.it];
+    const aa = (sa.ko - sa.ok), bb = (sb.ko - sb.ok);
+    return bb-aa;
+  }).slice(0,5);
+  let i=0, score=0;
+  function step(){
+    if(i>=items.length){ alert("🗓️ Terminé : "+score+"/"+items.length); return; }
+    const q=items[i]; const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+    setHTML($("#content"), `<h2>🗓️ Révision du jour</h2>
+      <p>${i+1}/5 — <b>${q.it}</b> ${q.emoji}</p>
+      ${opts.map(o=>`<button class="btn" onclick="(function(x){ const ok = x==='${q.fr.replace(/'/g,"\\'")}'; if(ok){score++;} recordResult('${q.it.replace(/'/g,"\\'")}',ok); i++; step(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}`);
+  }
+  step();
+}
+
+/* 21) Duel local (2 joueurs alternent) */
+function startDuel(){
+  let turn=0, score=[0,0], total=10, count=0;
+  function next(){
+    if(count>=total){ alert(`🏁 Fin du duel\nJoueur 1: ${score[0]}\nJoueur 2: ${score[1]}`); return; }
+    const p = (turn%2);
+    const q = pick(DATA)[0];
+    const opts = shuffle([q.fr, ...pick(DATA,6).map(x=>x.fr)]).slice(0,3);
+    setHTML($("#content"), `<h2>👥 Duel local</h2>
+      <p>Tour du <b>Joueur ${p+1}</b> — ${count+1}/${total}</p>
+      <p>Traduire : <b>${q.it}</b> ${q.emoji}</p>
+      <div>${opts.map(o=>`<button class="btn" onclick="(function(x){ const ok=(x==='${q.fr.replace(/'/g,"\\'")}'); if(ok) score[${p}]++; recordResult('${q.it.replace(/'/g,"\\'")}',ok); turn++; count++; next(); })('${o.replace(/'/g,"\\'")}')">${o}</button>`).join(" ")}</div>
+      <p class="muted small">Scores — J1: ${score[0]} | J2: ${score[1]}</p>`);
+  }
+  next();
+}
+
+/* =======================
+   DnD Handlers already declared above
+======================= */
+
+/* ============== Init ============== */
+renderToolbar(); renderHUD(); showLesson();
+</script>
 </body>
 </html>
