@@ -2,93 +2,86 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Révision Italien — Loisirs</title>
+  <title>Italien — Loisirs</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1, h2 { text-align: center; color: #2c3e50; }
-    .card { background: white; padding: 15px; margin: 10px auto; border-radius: 10px; max-width: 600px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .emoji { font-size: 24px; margin-right: 8px; }
-    .question { margin: 10px 0; }
-    button { padding: 8px 15px; margin-top: 10px; cursor: pointer; border: none; background: #2c3e50; color: white; border-radius: 5px; }
-    button:hover { background: #34495e; }
-    .result { margin-top: 10px; font-weight: bold; }
-    input { padding: 5px; }
+    body { font-family: Arial, sans-serif; text-align: center; background: #f9f9f9; }
+    h1 { color: #2c3e50; }
+    button { margin: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-lesson { background: #3498db; color: white; }
+    .btn-quiz { background: #27ae60; color: white; }
+    .btn-flash { background: #f39c12; color: white; }
+    .card { display: inline-block; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 10px; cursor: pointer; min-width: 150px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h1>📘 Révision Italien — Loisirs et Activités</h1>
+  <h1>📘 Révision Italien — Loisirs</h1>
 
-  <!-- LEÇON -->
-  <div class="card">
-    <h2>📖 Leçon</h2>
-    <ul>
-      <li><span class="emoji">🧘</span> Fare yoga = faire du yoga</li>
-      <li><span class="emoji">🎣</span> Pescare = pêcher</li>
-      <li><span class="emoji">⚽</span> Giocare a calcio = jouer au foot</li>
-      <li><span class="emoji">🚲</span> Andare in bici = aller à vélo</li>
-      <li><span class="emoji">🏀</span> Giocare a basket = jouer au basket</li>
-      <li><span class="emoji">🏐</span> Giocare a pallavolo = jouer au volley</li>
-      <li><span class="emoji">🏏</span> Giocare a cricket = jouer au cricket</li>
-      <li><span class="emoji">🎸</span> Suonare la chitarra = jouer de la guitare</li>
-      <li><span class="emoji">🎤</span> Cantare = chanter</li>
-      <li><span class="emoji">🎨</span> Dipingere = peindre</li>
-      <li><span class="emoji">🎧</span> Ascoltare la musica = écouter de la musique</li>
-      <li><span class="emoji">🎭</span> Andare a teatro = aller au théâtre</li>
-      <li><span class="emoji">🎬</span> Andare al cinema = aller au cinéma</li>
-      <li><span class="emoji">📖</span> Leggere = lire</li>
-      <li><span class="emoji">🎮</span> Giocare ai videogiochi = jouer aux jeux vidéo</li>
-      <li><span class="emoji">✈️</span> Viaggiare = voyager</li>
-    </ul>
-  </div>
+  <button class="btn-lesson" onclick="showLesson()">📖 Leçon</button>
+  <button class="btn-quiz" onclick="startQuiz()">📝 Quiz</button>
+  <button class="btn-flash" onclick="startFlashcards()">🎴 Flashcards</button>
 
-  <!-- QUIZ -->
-  <div class="card">
-    <h2>📝 Quiz (choix multiple)</h2>
-    <div class="question">
-      <p>Que veut dire <b>“Giocare a calcio”</b> ?</p>
-      <select id="q1">
-        <option value="">-- Choisis --</option>
-        <option value="foot">Jouer au foot</option>
-        <option value="basket">Jouer au basket</option>
-        <option value="musique">Écouter de la musique</option>
-      </select>
-    </div>
-    <div class="question">
-      <p>Que veut dire <b>“Andare al cinema”</b> ?</p>
-      <select id="q2">
-        <option value="">-- Choisis --</option>
-        <option value="voyager">Voyager</option>
-        <option value="cinema">Aller au cinéma</option>
-        <option value="chanter">Chanter</option>
-      </select>
-    </div>
-    <button onclick="checkQuiz()">Vérifier</button>
-    <div id="quizResult" class="result"></div>
-  </div>
-
-  <!-- EXERCICE -->
-  <div class="card">
-    <h2>✍️ Exercice (complète)</h2>
-    <p>Traduis en français : <b>“Suonare la chitarra”</b></p>
-    <input type="text" id="ex1" placeholder="Ta réponse ici">
-    <button onclick="checkEx()">Vérifier</button>
-    <div id="exResult" class="result"></div>
-  </div>
+  <div id="content"></div>
 
   <script>
-    function checkQuiz() {
-      let score = 0;
-      if (document.getElementById("q1").value === "foot") score++;
-      if (document.getElementById("q2").value === "cinema") score++;
-      document.getElementById("quizResult").innerText = "Score : " + score + "/2";
+    const data = [
+      {emoji:"🧘", it:"Fare yoga", fr:"faire du yoga"},
+      {emoji:"🎣", it:"Pescare", fr:"pêcher"},
+      {emoji:"⚽", it:"Giocare a calcio", fr:"jouer au foot"},
+      {emoji:"🚲", it:"Andare in bici", fr:"aller à vélo"},
+      {emoji:"🏀", it:"Giocare a basket", fr:"jouer au basket"},
+      {emoji:"🏐", it:"Giocare a pallavolo", fr:"jouer au volley"},
+      {emoji:"🏏", it:"Giocare a cricket", fr:"jouer au cricket"},
+      {emoji:"🎸", it:"Suonare la chitarra", fr:"jouer de la guitare"},
+      {emoji:"🎤", it:"Cantare", fr:"chanter"},
+      {emoji:"🎨", it:"Dipingere", fr:"peindre"},
+      {emoji:"🎧", it:"Ascoltare la musica", fr:"écouter de la musique"},
+      {emoji:"🎭", it:"Andare a teatro", fr:"aller au théâtre"},
+      {emoji:"🎬", it:"Andare al cinema", fr:"aller au cinéma"},
+      {emoji:"📖", it:"Leggere", fr:"lire"},
+      {emoji:"🎮", it:"Giocare ai videogiochi", fr:"jouer aux jeux vidéo"},
+      {emoji:"✈️", it:"Viaggiare", fr:"voyager"}
+    ];
+
+    function showLesson() {
+      let html = "<h2>📖 Leçon</h2><ul style='list-style:none'>";
+      data.forEach(item => {
+        html += `<li>${item.emoji} ${item.it} = ${item.fr}</li>`;
+      });
+      html += "</ul>";
+      document.getElementById("content").innerHTML = html;
     }
-    function checkEx() {
-      let ans = document.getElementById("ex1").value.trim().toLowerCase();
-      if (ans.includes("guitare")) {
-        document.getElementById("exResult").innerText = "✅ Bravo !";
-      } else {
-        document.getElementById("exResult").innerText = "❌ Mauvaise réponse. C'était : jouer de la guitare.";
+
+    function startQuiz() {
+      let q = data[Math.floor(Math.random()*data.length)];
+      let options = [q.fr];
+      while(options.length<3) {
+        let r = data[Math.floor(Math.random()*data.length)].fr;
+        if(!options.includes(r)) options.push(r);
       }
+      options.sort(()=>Math.random()-0.5);
+      let html = `<h2>📝 Quiz</h2><p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>`;
+      options.forEach(opt=>{
+        html += `<button onclick="checkQuiz('${opt}','${q.fr}')">${opt}</button><br>`;
+      });
+      document.getElementById("content").innerHTML = html;
+    }
+
+    function checkQuiz(ans,correct) {
+      if(ans===correct) {
+        alert("✅ Bravo !");
+      } else {
+        alert("❌ Mauvaise réponse. C'était : " + correct);
+      }
+      startQuiz();
+    }
+
+    function startFlashcards() {
+      let html = "<h2>🎴 Flashcards</h2>";
+      data.forEach(item=>{
+        html += `<div class="card" onclick="this.innerText=this.innerText.includes('=')?'${item.emoji} ${item.it}':'${item.emoji} ${item.it} = ${item.fr}'">${item.emoji} ${item.it}</div>`;
+      });
+      document.getElementById("content").innerHTML = html;
     }
   </script>
 </body>
