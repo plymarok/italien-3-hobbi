@@ -6,20 +6,35 @@
   <style>
     body { font-family: Arial, sans-serif; text-align: center; background: #f9f9f9; }
     h1 { color: #2c3e50; }
-    button { margin: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    button { margin: 8px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
     .btn-lesson { background: #3498db; color: white; }
     .btn-quiz { background: #27ae60; color: white; }
     .btn-flash { background: #f39c12; color: white; }
+    .btn-audio { background: #9b59b6; color: white; }
+    .btn-vf { background: #e74c3c; color: white; }
+    .btn-drag { background: #16a085; color: white; }
+    .btn-auto { background: #2980b9; color: white; }
+    .btn-chrono { background: #d35400; color: white; }
+    .btn-memory { background: #8e44ad; color: white; }
     .card { display: inline-block; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 10px; cursor: pointer; min-width: 150px; }
-    .hidden { display: none; }
+    .dropzone { border: 2px dashed #aaa; padding: 10px; margin: 5px; border-radius: 8px; min-height: 40px; }
+    .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: auto; }
+    .memory-card { background: white; padding: 20px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>📘 Révision Italien — Loisirs</h1>
 
+  <!-- Boutons -->
   <button class="btn-lesson" onclick="showLesson()">📖 Leçon</button>
   <button class="btn-quiz" onclick="startQuiz()">📝 Quiz</button>
   <button class="btn-flash" onclick="startFlashcards()">🎴 Flashcards</button>
+  <button class="btn-audio" onclick="startAudio()">🔊 Audio</button>
+  <button class="btn-vf" onclick="startVF()">🎲 Vrai ou Faux</button>
+  <button class="btn-drag" onclick="startDragDrop()">🧩 Associer</button>
+  <button class="btn-auto" onclick="startAuto()">⏱️ Révision minute</button>
+  <button class="btn-chrono" onclick="startChrono()">🏆 Challenge chrono</button>
+  <button class="btn-memory" onclick="startMemory()">🎮 Memory</button>
 
   <div id="content"></div>
 
@@ -43,15 +58,15 @@
       {emoji:"✈️", it:"Viaggiare", fr:"voyager"}
     ];
 
+    // 📖 Leçon
     function showLesson() {
       let html = "<h2>📖 Leçon</h2><ul style='list-style:none'>";
-      data.forEach(item => {
-        html += `<li>${item.emoji} ${item.it} = ${item.fr}</li>`;
-      });
+      data.forEach(item => html += `<li>${item.emoji} ${item.it} = ${item.fr}</li>`);
       html += "</ul>";
       document.getElementById("content").innerHTML = html;
     }
 
+    // 📝 Quiz
     function startQuiz() {
       let q = data[Math.floor(Math.random()*data.length)];
       let options = [q.fr];
@@ -61,27 +76,145 @@
       }
       options.sort(()=>Math.random()-0.5);
       let html = `<h2>📝 Quiz</h2><p>Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>`;
-      options.forEach(opt=>{
-        html += `<button onclick="checkQuiz('${opt}','${q.fr}')">${opt}</button><br>`;
-      });
+      options.forEach(opt=> html += `<button onclick="checkQuiz('${opt}','${q.fr}')">${opt}</button><br>`);
       document.getElementById("content").innerHTML = html;
     }
-
     function checkQuiz(ans,correct) {
-      if(ans===correct) {
-        alert("✅ Bravo !");
-      } else {
-        alert("❌ Mauvaise réponse. C'était : " + correct);
-      }
+      alert(ans===correct ? "✅ Bravo !" : "❌ Mauvaise réponse. C'était : " + correct);
       startQuiz();
     }
 
+    // 🎴 Flashcards
     function startFlashcards() {
       let html = "<h2>🎴 Flashcards</h2>";
       data.forEach(item=>{
         html += `<div class="card" onclick="this.innerText=this.innerText.includes('=')?'${item.emoji} ${item.it}':'${item.emoji} ${item.it} = ${item.fr}'">${item.emoji} ${item.it}</div>`;
       });
       document.getElementById("content").innerHTML = html;
+    }
+
+    // 🔊 Audio
+    function startAudio() {
+      let html = "<h2>🔊 Écoute et répète</h2>";
+      data.forEach(item=> html += `<button onclick="speak('${item.it}')">${item.emoji} ${item.it}</button><br>`);
+      document.getElementById("content").innerHTML = html;
+    }
+    function speak(text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "it-IT";
+      speechSynthesis.speak(u);
+    }
+
+    // 🎲 Vrai ou Faux
+    function startVF() {
+      let q = data[Math.floor(Math.random()*data.length)];
+      let r = data[Math.floor(Math.random()*data.length)];
+      let html = `<h2>🎲 Vrai ou Faux</h2><p>${q.it} ${q.emoji} = ${r.fr}</p>`;
+      html += `<button onclick="checkVF(${q.fr===r.fr},true)">Vrai</button>`;
+      html += `<button onclick="checkVF(${q.fr===r.fr},false)">Faux</button>`;
+      document.getElementById("content").innerHTML = html;
+    }
+    function checkVF(correct,answer) {
+      alert(answer===correct ? "✅ Bravo !" : "❌ Mauvaise réponse !");
+      startVF();
+    }
+
+    // 🧩 Drag & Drop
+    function startDragDrop() {
+      let shuffled = [...data].sort(()=>Math.random()-0.5);
+      let html = "<h2>🧩 Associer</h2><p>Glisse le mot italien sur la bonne traduction :</p>";
+      html += "<div style='display:flex;flex-wrap:wrap;justify-content:center'>";
+      shuffled.forEach((item,i)=>{
+        html += `<div draggable="true" ondragstart="drag(event,'${item.fr}')" class="card">${item.emoji} ${item.it}</div>`;
+      });
+      html += "</div><hr>";
+      data.forEach(item=>{
+        html += `<div class="dropzone" ondrop="drop(event,'${item.fr}')" ondragover="allowDrop(event)">${item.fr}</div>`;
+      });
+      document.getElementById("content").innerHTML = html;
+    }
+    function allowDrop(ev){ev.preventDefault();}
+    function drag(ev,text){ev.dataTransfer.setData("text",text);}
+    function drop(ev,correct){
+      ev.preventDefault();
+      let dataText = ev.dataTransfer.getData("text");
+      if(dataText===correct){ ev.target.style.background="lightgreen"; }
+      else { ev.target.style.background="salmon"; }
+    }
+
+    // ⏱️ Révision minute
+    let autoIndex=0, autoTimer=null;
+    function startAuto(){
+      autoIndex=0;
+      if(autoTimer) clearInterval(autoTimer);
+      document.getElementById("content").innerHTML="<h2>⏱️ Révision minute</h2><div id='autoBox'></div>";
+      autoTimer=setInterval(()=>{
+        let item=data[autoIndex];
+        document.getElementById("autoBox").innerText=`${item.emoji} ${item.it} = ${item.fr}`;
+        autoIndex=(autoIndex+1)%data.length;
+      },3000);
+    }
+
+    // 🏆 Challenge chrono
+    let chronoScore=0, chronoCount=0, chronoTimer=null;
+    function startChrono(){
+      chronoScore=0; chronoCount=0;
+      document.getElementById("content").innerHTML="<h2>🏆 Challenge chrono</h2><div id='chronoBox'></div>";
+      chronoNext();
+    }
+    function chronoNext(){
+      if(chronoCount>=10){ alert("Score final : "+chronoScore+"/10"); return; }
+      chronoCount++;
+      let q=data[Math.floor(Math.random()*data.length)];
+      let options=[q.fr];
+      while(options.length<3){
+        let r=data[Math.floor(Math.random()*data.length)].fr;
+        if(!options.includes(r)) options.push(r);
+      }
+      options.sort(()=>Math.random()-0.5);
+      let html=`<p>${chronoCount}/10 — Que veut dire <b>${q.it}</b> ${q.emoji} ?</p>`;
+      options.forEach(opt=> html+=`<button onclick="chronoCheck('${opt}','${q.fr}')">${opt}</button><br>`);
+      document.getElementById("chronoBox").innerHTML=html;
+    }
+    function chronoCheck(ans,correct){
+      if(ans===correct) chronoScore++;
+      chronoNext();
+    }
+
+    // 🎮 Memory
+    let memory=[], flipped=[], found=0;
+    function startMemory(){
+      memory=[];
+      data.forEach(item=>{
+        memory.push({text:item.it, pair:item.fr});
+        memory.push({text:item.fr, pair:item.it});
+      });
+      memory.sort(()=>Math.random()-0.5);
+      let html="<h2>🎮 Memory</h2><div class='memory-grid'>";
+      memory.forEach((c,i)=> html+=`<div class='memory-card' id='m${i}' onclick='flip(${i})'>?</div>`);
+      html+="</div>";
+      document.getElementById("content").innerHTML=html;
+    }
+    function flip(i){
+      let card=memory[i], div=document.getElementById("m"+i);
+      if(flipped.length<2 && div.innerText==='?'){
+        div.innerText=card.text;
+        flipped.push({i,text:card.text,pair:card.pair});
+        if(flipped.length===2){
+          setTimeout(()=>{
+            if((flipped[0].text===flipped[1].pair)){
+              document.getElementById("m"+flipped[0].i).style.background="lightgreen";
+              document.getElementById("m"+flipped[1].i).style.background="lightgreen";
+              found++;
+              if(found===data.length) alert("🎉 Bravo ! Tu as gagné le memory !");
+            } else {
+              document.getElementById("m"+flipped[0].i).innerText='?';
+              document.getElementById("m"+flipped[1].i).innerText='?';
+            }
+            flipped=[];
+          },800);
+        }
+      }
     }
   </script>
 </body>
